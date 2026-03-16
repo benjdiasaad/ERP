@@ -26,19 +26,19 @@ Each task is self-contained and can be executed independently by KIRO. Tasks are
 - [x] Verify: `php artisan migrate` succeeds, `npm run build` succeeds, test suite baseline passes
 
 ## TASK 2: Company Module
-- [ ] Create migration `create_companies_table` (see design.md for schema)
-- [ ] Create migration `create_company_user_table` (pivot: user_id, company_id, is_default, joined_at — NO role_id, roles are separate via role_user)
-- [ ] Create `app/Models/Company/Company.php` — SoftDeletes, relationships (users M2M), scope active()
-- [ ] Create `app/Services/Company/CompanyService.php` — create, update, delete, addUser, removeUser, switchCompany
-- [ ] Create `app/Http/Controllers/Company/CompanyController.php` — CRUD + addUser + removeUser + switch
-- [ ] Create `app/Http/Requests/Company/StoreCompanyRequest.php`, `UpdateCompanyRequest.php`
-- [ ] Create `app/Http/Resources/Company/CompanyResource.php`
-- [ ] Create `app/Policies/Company/CompanyPolicy.php`
-- [ ] Create `app/Http/Middleware/SetCurrentCompany.php`
-- [ ] Register routes: `/companies` CRUD + `/companies/{company}/users` + `/companies/{company}/switch`
-- [ ] Create `database/factories/CompanyFactory.php`
-- [ ] Create `tests/Feature/Company/CompanyCrudTest.php` — CRUD, add/remove user, switch, tenant isolation
-- [ ] Create `tests/Unit/Services/CompanyServiceTest.php`
+- [x] Create migration `create_companies_table` (see design.md for schema)
+- [x] Create migration `create_company_user_table` (pivot: user_id, company_id, is_default, joined_at — NO role_id, roles are separate via role_user)
+- [x] Create `app/Models/Company/Company.php` — SoftDeletes, relationships (users M2M), scope active()
+- [x] Create `app/Services/Company/CompanyService.php` — create, update, delete, addUser, removeUser, switchCompany
+- [x] Create `app/Http/Controllers/Company/CompanyController.php` — CRUD + addUser + removeUser + switch
+- [x] Create `app/Http/Requests/Company/StoreCompanyRequest.php`, `UpdateCompanyRequest.php`
+- [x] Create `app/Http/Resources/Company/CompanyResource.php`
+- [x] Create `app/Policies/Company/CompanyPolicy.php`
+- [x] Create `app/Http/Middleware/SetCurrentCompany.php`
+- [x] Register routes: `/companies` CRUD + `/companies/{company}/users` + `/companies/{company}/switch`
+- [x] Create `database/factories/CompanyFactory.php`
+- [x] Create `tests/Feature/Company/CompanyCrudTest.php` — CRUD, add/remove user, switch, tenant isolation
+- [x] Create `tests/Unit/Services/CompanyServiceTest.php`
 
 ## TASK 3: Users & Authentication Module
 - [ ] Modify migration `create_users_table` — add: matricule, first_name, last_name, phone, avatar_path, current_company_id, is_active (NO is_superadmin — super admin is just a role), last_login_at, last_login_ip, password_changed_at, deleted_at
