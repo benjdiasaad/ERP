@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Services;
 
 use App\Models\Company\Company;
-use App\Models\User;
+use App\Models\Auth\User;
 use App\Services\Company\CompanyService;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;

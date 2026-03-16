@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Company;
 
 use App\Models\Company\Company;
-use App\Models\User;
+use App\Models\Auth\User;
 use Tests\TestCase;
 
 class CompanyCrudTest extends TestCase

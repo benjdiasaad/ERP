@@ -13,8 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'company' => \App\Http\Middleware\SetCurrentCompany::class,
+            'company'    => \App\Http\Middleware\SetCurrentCompany::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
+
+        $middleware->throttleApi('api');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

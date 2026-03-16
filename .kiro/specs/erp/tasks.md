@@ -41,23 +41,23 @@ Each task is self-contained and can be executed independently by KIRO. Tasks are
 - [x] Create `tests/Unit/Services/CompanyServiceTest.php`
 
 ## TASK 3: Users & Authentication Module
-- [ ] Modify migration `create_users_table` — add: matricule, first_name, last_name, phone, avatar_path, current_company_id, is_active (NO is_superadmin — super admin is just a role), last_login_at, last_login_ip, password_changed_at, deleted_at
-- [ ] Create migration `create_password_histories_table`
-- [ ] Create migration `create_login_attempts_table`
-- [ ] Update `app/Models/Auth/User.php` — HasApiTokens, SoftDeletes, relations: companies() BelongsToMany, currentCompany() BelongsTo, roles() BelongsToMany (with company_id pivot), personnel() HasOne. Methods: hasPermission(string $slug): bool (checks all user roles in current company for that permission), hasRole(string $roleSlug): bool, getRolesForCompany(?int $companyId): Collection. Matricule auto-generation on boot.
-- [ ] Create `app/Services/Auth/AuthService.php` — register, login (with rate limit check), logout, refreshToken, changePassword (with history check), forgotPassword, resetPassword
-- [ ] Create `app/Http/Controllers/Auth/AuthController.php` — all auth endpoints
-- [ ] Create `app/Http/Requests/Auth/LoginRequest.php`, `RegisterRequest.php`, `ChangePasswordRequest.php`
-- [ ] Create `app/Http/Resources/Auth/UserResource.php`
-- [ ] Create `app/Http/Middleware/CheckPermission.php`
-- [ ] Register auth routes: `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/me`, `/auth/refresh-token`, `/auth/change-password`, `/auth/forgot-password`, `/auth/reset-password`
-- [ ] Configure rate limiting in AppServiceProvider: login 5/min, api 60/min
-- [ ] Create `database/factories/UserFactory.php`
-- [ ] Create `tests/Feature/Auth/LoginTest.php` — login, invalid credentials, rate limiting, lockout
-- [ ] Create `tests/Feature/Auth/RegisterTest.php` — register, validation, matricule generation
-- [ ] Create `tests/Feature/Auth/PasswordResetTest.php`
-- [ ] Create `tests/Feature/Auth/TokenTest.php` — token creation, refresh, expiry
-- [ ] Create `tests/Unit/Services/AuthServiceTest.php`
+- [x] Modify migration `create_users_table` — add: matricule, first_name, last_name, phone, avatar_path, current_company_id, is_active (NO is_superadmin — super admin is just a role), last_login_at, last_login_ip, password_changed_at, deleted_at
+- [x] Create migration `create_password_histories_table`
+- [x] Create migration `create_login_attempts_table`
+- [x] Update `app/Models/Auth/User.php` — HasApiTokens, SoftDeletes, relations: companies() BelongsToMany, currentCompany() BelongsTo, roles() BelongsToMany (with company_id pivot), personnel() HasOne. Methods: hasPermission(string $slug): bool (checks all user roles in current company for that permission), hasRole(string $roleSlug): bool, getRolesForCompany(?int $companyId): Collection. Matricule auto-generation on boot.
+- [x] Create `app/Services/Auth/AuthService.php` — register, login (with rate limit check), logout, refreshToken, changePassword (with history check), forgotPassword, resetPassword
+- [x] Create `app/Http/Controllers/Auth/AuthController.php` — all auth endpoints
+- [x] Create `app/Http/Requests/Auth/LoginRequest.php`, `RegisterRequest.php`, `ChangePasswordRequest.php`
+- [x] Create `app/Http/Resources/Auth/UserResource.php`
+- [x] Create `app/Http/Middleware/CheckPermission.php`
+- [x] Register auth routes: `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/me`, `/auth/refresh-token`, `/auth/change-password`, `/auth/forgot-password`, `/auth/reset-password`
+- [x] Configure rate limiting in AppServiceProvider: login 5/min, api 60/min
+- [x] Create `database/factories/UserFactory.php`
+- [x] Create `tests/Feature/Auth/LoginTest.php` — login, invalid credentials, rate limiting, lockout
+- [x] Create `tests/Feature/Auth/RegisterTest.php` — register, validation, matricule generation
+- [x] Create `tests/Feature/Auth/PasswordResetTest.php`
+- [x] Create `tests/Feature/Auth/TokenTest.php` — token creation, refresh, expiry
+- [x] Create `tests/Unit/Services/AuthServiceTest.php`
 
 ## TASK 4: Roles & Permissions Module (3-Table RBAC: users ←→ roles ←→ permissions)
 - [ ] Create migration `create_roles_table` — id, company_id (FK nullable, null=global), name, slug, description, is_system, timestamps. Unique: (company_id, slug)

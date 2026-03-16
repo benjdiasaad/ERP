@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Policies\Company;
 
 use App\Models\Company\Company;
-use App\Models\User;
+use App\Models\Auth\User;
 
 class CompanyPolicy
 {

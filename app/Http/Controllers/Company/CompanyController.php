@@ -9,7 +9,7 @@ use App\Http\Requests\Company\StoreCompanyRequest;
 use App\Http\Requests\Company\UpdateCompanyRequest;
 use App\Http\Resources\Company\CompanyResource;
 use App\Models\Company\Company;
-use App\Models\User;
+use App\Models\Auth\User;
 use App\Services\Company\CompanyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
