@@ -15,7 +15,7 @@ Build a comprehensive multi-company ERP system using Laravel 12, PostgreSQL, Tai
 
 ## Architecture Requirements
 
-- **Domain-Driven Folder Structure**: Each module lives under `app/Domain/{Module}/` with its own Models, Services, Controllers, Requests, Resources, Policies, and Tests.
+- **Standard Laravel MVC with Domain Subfolders**: Each MVC layer (Models, Controllers, Services, Requests, Resources, Policies) keeps its standard Laravel directory, with domain subfolders inside: `app/Models/{Domain}/`, `app/Http/Controllers/{Domain}/`, `app/Services/{Domain}/`, `app/Http/Requests/{Domain}/`, `app/Http/Resources/{Domain}/`, `app/Policies/{Domain}/`.
 - **Service Layer Pattern**: All business logic must be in Service classes. Controllers only handle HTTP request/response — no logic in controllers.
 - **Traits**: `BelongsToCompany` (auto-scopes queries by company), `HasAuditTrail`, `GeneratesReference`, `HasStatus`.
 - **Policies**: Every model must have a Policy class for authorization.

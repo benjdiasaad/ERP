@@ -2,7 +2,7 @@
 
 ## Overview
 
-A comprehensive multi-company ERP built with Laravel 12, PostgreSQL, Tailwind CSS, and Laravel Sanctum. Each model lives in its own domain folder under `app/Domain/{Module}`. Business logic lives in Service classes, not controllers. Single database with `company_id` tenant isolation. Full TDD with Feature + Unit tests.
+A comprehensive multi-company ERP built with Laravel 12, PostgreSQL, Tailwind CSS, and Laravel Sanctum. Standard Laravel MVC structure with domain subfolders: `app/Models/{Domain}/`, `app/Http/Controllers/{Domain}/`, `app/Services/{Domain}/`, etc. Business logic lives in Service classes, not controllers. Single database with `company_id` tenant isolation. Full TDD with Feature + Unit tests.
 
 ---
 
@@ -12,186 +12,87 @@ A comprehensive multi-company ERP built with Laravel 12, PostgreSQL, Tailwind CS
 
 ```
 app/
-├── Domain/
-│   ├── Auth/
-│   │   ├── Models/
-│   │   │   ├── User.php
-│   │   │   ├── Role.php
-│   │   │   └── Permission.php
-│   │   ├── Services/
-│   │   │   ├── AuthService.php
-│   │   │   ├── RoleService.php
-│   │   │   └── PermissionService.php
-│   │   ├── Controllers/
-│   │   │   ├── AuthController.php
-│   │   │   ├── RoleController.php
-│   │   │   └── PermissionController.php
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Company/
-│   │   ├── Models/
-│   │   │   └── Company.php
-│   │   ├── Services/
-│   │   │   └── CompanyService.php
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   ├── Middleware/
-│   │   │   └── EnsureCompanyAccess.php
-│   │   └── Tests/
-│   ├── Personnel/
-│   │   ├── Models/
-│   │   │   ├── Personnel.php
-│   │   │   ├── Department.php
-│   │   │   ├── Position.php
-│   │   │   ├── Contract.php
-│   │   │   ├── Leave.php
-│   │   │   └── Attendance.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Sales/
-│   │   ├── Models/
-│   │   │   ├── Customer.php
-│   │   │   ├── Quote.php
-│   │   │   ├── QuoteLine.php
-│   │   │   ├── SalesOrder.php
-│   │   │   ├── SalesOrderLine.php
-│   │   │   ├── Invoice.php
-│   │   │   ├── InvoiceLine.php
-│   │   │   ├── CreditNote.php
-│   │   │   ├── CreditNoteLine.php
-│   │   │   ├── DeliveryNote.php
-│   │   │   └── DeliveryNoteLine.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Purchasing/
-│   │   ├── Models/
-│   │   │   ├── Supplier.php
-│   │   │   ├── PurchaseRequest.php
-│   │   │   ├── PurchaseRequestLine.php
-│   │   │   ├── PurchaseOrder.php
-│   │   │   ├── PurchaseOrderLine.php
-│   │   │   ├── ReceptionNote.php
-│   │   │   ├── ReceptionNoteLine.php
-│   │   │   ├── PurchaseInvoice.php
-│   │   │   └── PurchaseInvoiceLine.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Inventory/
-│   │   ├── Models/
-│   │   │   ├── Product.php
-│   │   │   ├── ProductCategory.php
-│   │   │   ├── Warehouse.php
-│   │   │   ├── StockMovement.php
-│   │   │   ├── StockInventory.php
-│   │   │   └── StockInventoryLine.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Finance/
-│   │   ├── Models/
-│   │   │   ├── ChartOfAccount.php
-│   │   │   ├── JournalEntry.php
-│   │   │   ├── JournalEntryLine.php
-│   │   │   ├── BankAccount.php
-│   │   │   ├── Payment.php
-│   │   │   ├── PaymentMethod.php
-│   │   │   ├── Tax.php
-│   │   │   ├── Currency.php
-│   │   │   └── PaymentTerm.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Caution/
-│   │   ├── Models/
-│   │   │   ├── Caution.php
-│   │   │   ├── CautionType.php
-│   │   │   └── CautionHistory.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Event/
-│   │   ├── Models/
-│   │   │   ├── Event.php
-│   │   │   ├── EventCategory.php
-│   │   │   └── EventParticipant.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── CRM/
-│   │   ├── Models/
-│   │   │   ├── Contact.php
-│   │   │   ├── Lead.php
-│   │   │   ├── Opportunity.php
-│   │   │   └── Activity.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   ├── Project/
-│   │   ├── Models/
-│   │   │   ├── Project.php
-│   │   │   ├── Task.php
-│   │   │   └── Timesheet.php
-│   │   ├── Services/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   ├── Resources/
-│   │   ├── Policies/
-│   │   └── Tests/
-│   └── Settings/
-│       ├── Models/
-│       │   ├── Setting.php
-│       │   └── Sequence.php
-│       ├── Services/
-│       ├── Controllers/
-│       ├── Requests/
-│       ├── Resources/
-│       └── Tests/
+├── Models/
+│   ├── Auth/              → User.php, Role.php, Permission.php
+│   ├── Company/           → Company.php
+│   ├── Personnel/         → Personnel.php, Department.php, Position.php, Contract.php, Leave.php, Attendance.php
+│   ├── Sales/             → Customer.php, Quote.php, QuoteLine.php, SalesOrder.php, SalesOrderLine.php, Invoice.php, InvoiceLine.php, CreditNote.php, CreditNoteLine.php, DeliveryNote.php, DeliveryNoteLine.php
+│   ├── Purchasing/        → Supplier.php, PurchaseRequest.php, PurchaseRequestLine.php, PurchaseOrder.php, PurchaseOrderLine.php, ReceptionNote.php, ReceptionNoteLine.php, PurchaseInvoice.php, PurchaseInvoiceLine.php
+│   ├── Inventory/         → Product.php, ProductCategory.php, Warehouse.php, StockMovement.php, StockLevel.php, StockInventory.php, StockInventoryLine.php
+│   ├── Finance/           → Currency.php, Tax.php, PaymentTerm.php, PaymentMethod.php, ChartOfAccount.php, BankAccount.php, JournalEntry.php, JournalEntryLine.php, Payment.php
+│   ├── Caution/           → CautionType.php, Caution.php, CautionHistory.php
+│   ├── Event/             → EventCategory.php, Event.php, EventParticipant.php
+│   ├── CRM/               → Contact.php, Lead.php, Opportunity.php, Activity.php
+│   ├── Project/           → Project.php, Task.php, Timesheet.php
+│   └── Settings/          → Setting.php, Sequence.php, AuditLog.php, Notification.php, Attachment.php
+│
 ├── Http/
-│   ├── Middleware/
-│   │   ├── SetCurrentCompany.php
-│   │   ├── CheckPermission.php
-│   │   └── AuditLog.php
-│   └── Kernel.php
+│   ├── Controllers/
+│   │   ├── Auth/          → AuthController.php, RoleController.php, PermissionController.php
+│   │   ├── Company/       → CompanyController.php
+│   │   ├── Personnel/     → PersonnelController.php, DepartmentController.php, PositionController.php, ContractController.php, LeaveController.php, AttendanceController.php
+│   │   ├── Sales/         → CustomerController.php, QuoteController.php, SalesOrderController.php, InvoiceController.php, CreditNoteController.php, DeliveryNoteController.php
+│   │   ├── Purchasing/    → SupplierController.php, PurchaseRequestController.php, PurchaseOrderController.php, ReceptionNoteController.php, PurchaseInvoiceController.php
+│   │   ├── Inventory/     → ProductController.php, ProductCategoryController.php, WarehouseController.php, StockMovementController.php, StockInventoryController.php
+│   │   ├── Finance/       → CurrencyController.php, TaxController.php, ChartOfAccountController.php, BankAccountController.php, JournalEntryController.php, PaymentController.php
+│   │   ├── Caution/       → CautionTypeController.php, CautionController.php
+│   │   ├── Event/         → EventCategoryController.php, EventController.php, EventParticipantController.php
+│   │   ├── CRM/           → ContactController.php, LeadController.php, OpportunityController.php, ActivityController.php
+│   │   ├── Project/       → ProjectController.php, TaskController.php, TimesheetController.php
+│   │   └── Settings/      → SettingController.php, SequenceController.php, NotificationController.php
+│   │
+│   ├── Requests/
+│   │   ├── Auth/          → LoginRequest.php, RegisterRequest.php, StoreRoleRequest.php, ...
+│   │   ├── Sales/         → StoreQuoteRequest.php, UpdateQuoteRequest.php, StoreInvoiceRequest.php, ...
+│   │   └── ... (one subfolder per domain)
+│   │
+│   ├── Resources/
+│   │   ├── Auth/          → UserResource.php, RoleResource.php, PermissionResource.php
+│   │   ├── Sales/         → CustomerResource.php, QuoteResource.php, InvoiceResource.php, ...
+│   │   └── ... (one subfolder per domain)
+│   │
+│   └── Middleware/
+│       ├── SetCurrentCompany.php
+│       ├── CheckPermission.php
+│       └── AuditLog.php
+│
+├── Services/
+│   ├── Auth/              → AuthService.php, RoleService.php, PermissionService.php
+│   ├── Company/           → CompanyService.php
+│   ├── Personnel/         → PersonnelService.php, DepartmentService.php, ContractService.php, LeaveService.php, AttendanceService.php
+│   ├── Sales/             → CustomerService.php, QuoteService.php, SalesOrderService.php, InvoiceService.php, CreditNoteService.php, DeliveryNoteService.php
+│   ├── Purchasing/        → SupplierService.php, PurchaseRequestService.php, PurchaseOrderService.php, ReceptionNoteService.php, PurchaseInvoiceService.php
+│   ├── Inventory/         → ProductService.php, WarehouseService.php, StockMovementService.php, StockInventoryService.php
+│   ├── Finance/           → CurrencyService.php, TaxService.php, ChartOfAccountService.php, BankAccountService.php, JournalEntryService.php, PaymentService.php
+│   ├── Caution/           → CautionTypeService.php, CautionService.php
+│   ├── Event/             → EventService.php, EventCategoryService.php, EventParticipantService.php
+│   ├── CRM/               → ContactService.php, LeadService.php, OpportunityService.php, ActivityService.php
+│   ├── Project/           → ProjectService.php, TaskService.php, TimesheetService.php
+│   └── Settings/          → SettingService.php, SequenceService.php, AuditLogService.php, NotificationService.php, AttachmentService.php
+│
+├── Policies/
+│   ├── Auth/              → RolePolicy.php
+│   ├── Company/           → CompanyPolicy.php
+│   ├── Sales/             → QuotePolicy.php, InvoicePolicy.php, ...
+│   └── ... (one subfolder per domain)
+│
 ├── Traits/
 │   ├── BelongsToCompany.php
 │   ├── HasAuditTrail.php
 │   ├── GeneratesReference.php
 │   └── HasStatus.php
+│
 └── Providers/
-    ├── DomainServiceProvider.php
     └── AuthServiceProvider.php
 ```
+
+**Namespace examples:**
+- `App\Models\Sales\Invoice`
+- `App\Http\Controllers\Sales\InvoiceController`
+- `App\Services\Sales\InvoiceService`
+- `App\Http\Requests\Sales\StoreInvoiceRequest`
+- `App\Http\Resources\Sales\InvoiceResource`
+- `App\Policies\Sales\InvoicePolicy`
 
 ### Core Traits
 
@@ -233,7 +134,7 @@ Initialize Laravel 12 project with PostgreSQL, Sanctum, Tailwind CSS, and base f
 1. Configure `.env` for PostgreSQL
 2. Install `laravel/sanctum` via composer
 3. Install Tailwind CSS via npm
-4. Create `app/Domain/` folder structure for all modules
+4. Create domain subfolders in `app/Models/`, `app/Http/Controllers/`, `app/Services/`, `app/Http/Requests/`, `app/Http/Resources/`, `app/Policies/` for all modules
 5. Create `app/Traits/BelongsToCompany.php`
 6. Create `app/Traits/HasAuditTrail.php`
 7. Create `app/Traits/GeneratesReference.php`

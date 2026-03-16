@@ -5,30 +5,35 @@ Each task is self-contained and can be executed independently by KIRO. Tasks are
 ---
 
 ## TASK 1: Project Setup & Base Configuration
-- [ ] Configure `.env` for PostgreSQL connection
-- [ ] Install `laravel/sanctum` via composer (`composer require laravel/sanctum`)
-- [ ] Install and configure Tailwind CSS (`npm install -D tailwindcss @tailwindcss/vite`)
-- [ ] Configure `tailwind.config.js` and update `vite.config.js`
-- [ ] Create directory structure: `app/Domain/{Auth,Company,Personnel,Sales,Purchasing,Inventory,Finance,Caution,Event,CRM,Project,Settings}` with subdirs `Models,Services,Controllers,Requests,Resources,Policies`
-- [ ] Create `app/Traits/BelongsToCompany.php` — global scope + auto company_id on create
-- [ ] Create `app/Traits/HasAuditTrail.php` — boot method to log create/update/delete to audit_logs
-- [ ] Create `app/Traits/GeneratesReference.php` — uses SequenceService to auto-generate reference on create
-- [ ] Create `app/Traits/HasStatus.php` — status transition validation helper
-- [ ] Create `app/Providers/DomainServiceProvider.php` — auto-register all domain folders
-- [ ] Configure `config/sanctum.php` — token expiration 24h
-- [ ] Configure `config/auth.php` — sanctum guard
-- [ ] Update `tests/TestCase.php` — add helpers: `setUpCompanyAndUser()`, `authHeaders()`, `assertTenantIsolation()`
-- [ ] Verify: `php artisan migrate` succeeds, `npm run build` succeeds, test suite baseline passes
+- [x] Configure `.env` for PostgreSQL connection
+- [x] Install `laravel/sanctum` via composer (`composer require laravel/sanctum`)
+- [x] Install and configure Tailwind CSS (`npm install -D tailwindcss @tailwindcss/vite`)
+- [x] Configure `tailwind.config.js` and update `vite.config.js`
+- [x] Create domain subfolders in standard MVC structure:
+  - `app/Models/{Auth,Company,Personnel,Sales,Purchasing,Inventory,Finance,Caution,Event,CRM,Project,Settings}`
+  - `app/Http/Controllers/{Auth,Company,Personnel,Sales,Purchasing,Inventory,Finance,Caution,Event,CRM,Project,Settings}`
+  - `app/Http/Requests/{Auth,Company,Personnel,Sales,Purchasing,Inventory,Finance,Caution,Event,CRM,Project,Settings}`
+  - `app/Http/Resources/{Auth,Company,Personnel,Sales,Purchasing,Inventory,Finance,Caution,Event,CRM,Project,Settings}`
+  - `app/Services/{Auth,Company,Personnel,Sales,Purchasing,Inventory,Finance,Caution,Event,CRM,Project,Settings}`
+  - `app/Policies/{Auth,Company,Personnel,Sales,Purchasing,Inventory,Finance,Caution,Event,CRM,Project,Settings}`
+- [x] Create `app/Traits/BelongsToCompany.php` — global scope + auto company_id on create
+- [x] Create `app/Traits/HasAuditTrail.php` — boot method to log create/update/delete to audit_logs
+- [x] Create `app/Traits/GeneratesReference.php` — uses SequenceService to auto-generate reference on create
+- [x] Create `app/Traits/HasStatus.php` — status transition validation helper
+- [x] Configure `config/sanctum.php` — token expiration 24h
+- [x] Configure `config/auth.php` — sanctum guard
+- [x] Update `tests/TestCase.php` — add helpers: `setUpCompanyAndUser()`, `authHeaders()`, `assertTenantIsolation()`
+- [x] Verify: `php artisan migrate` succeeds, `npm run build` succeeds, test suite baseline passes
 
 ## TASK 2: Company Module
 - [ ] Create migration `create_companies_table` (see design.md for schema)
 - [ ] Create migration `create_company_user_table` (pivot: user_id, company_id, is_default, joined_at — NO role_id, roles are separate via role_user)
-- [ ] Create `app/Domain/Company/Models/Company.php` — SoftDeletes, relationships (users M2M), scope active()
-- [ ] Create `app/Domain/Company/Services/CompanyService.php` — create, update, delete, addUser, removeUser, switchCompany
-- [ ] Create `app/Domain/Company/Controllers/CompanyController.php` — CRUD + addUser + removeUser + switch
-- [ ] Create `app/Domain/Company/Requests/StoreCompanyRequest.php`, `UpdateCompanyRequest.php`
-- [ ] Create `app/Domain/Company/Resources/CompanyResource.php`
-- [ ] Create `app/Domain/Company/Policies/CompanyPolicy.php`
+- [ ] Create `app/Models/Company/Company.php` — SoftDeletes, relationships (users M2M), scope active()
+- [ ] Create `app/Services/Company/CompanyService.php` — create, update, delete, addUser, removeUser, switchCompany
+- [ ] Create `app/Http/Controllers/Company/CompanyController.php` — CRUD + addUser + removeUser + switch
+- [ ] Create `app/Http/Requests/Company/StoreCompanyRequest.php`, `UpdateCompanyRequest.php`
+- [ ] Create `app/Http/Resources/Company/CompanyResource.php`
+- [ ] Create `app/Policies/Company/CompanyPolicy.php`
 - [ ] Create `app/Http/Middleware/SetCurrentCompany.php`
 - [ ] Register routes: `/companies` CRUD + `/companies/{company}/users` + `/companies/{company}/switch`
 - [ ] Create `database/factories/CompanyFactory.php`
@@ -39,11 +44,11 @@ Each task is self-contained and can be executed independently by KIRO. Tasks are
 - [ ] Modify migration `create_users_table` — add: matricule, first_name, last_name, phone, avatar_path, current_company_id, is_active (NO is_superadmin — super admin is just a role), last_login_at, last_login_ip, password_changed_at, deleted_at
 - [ ] Create migration `create_password_histories_table`
 - [ ] Create migration `create_login_attempts_table`
-- [ ] Update `app/Domain/Auth/Models/User.php` — HasApiTokens, SoftDeletes, relations: companies() BelongsToMany, currentCompany() BelongsTo, roles() BelongsToMany (with company_id pivot), personnel() HasOne. Methods: hasPermission(string $slug): bool (checks all user roles in current company for that permission), hasRole(string $roleSlug): bool, getRolesForCompany(?int $companyId): Collection. Matricule auto-generation on boot.
-- [ ] Create `app/Domain/Auth/Services/AuthService.php` — register, login (with rate limit check), logout, refreshToken, changePassword (with history check), forgotPassword, resetPassword
-- [ ] Create `app/Domain/Auth/Controllers/AuthController.php` — all auth endpoints
-- [ ] Create `app/Domain/Auth/Requests/LoginRequest.php`, `RegisterRequest.php`, `ChangePasswordRequest.php`
-- [ ] Create `app/Domain/Auth/Resources/UserResource.php`
+- [ ] Update `app/Models/Auth/User.php` — HasApiTokens, SoftDeletes, relations: companies() BelongsToMany, currentCompany() BelongsTo, roles() BelongsToMany (with company_id pivot), personnel() HasOne. Methods: hasPermission(string $slug): bool (checks all user roles in current company for that permission), hasRole(string $roleSlug): bool, getRolesForCompany(?int $companyId): Collection. Matricule auto-generation on boot.
+- [ ] Create `app/Services/Auth/AuthService.php` — register, login (with rate limit check), logout, refreshToken, changePassword (with history check), forgotPassword, resetPassword
+- [ ] Create `app/Http/Controllers/Auth/AuthController.php` — all auth endpoints
+- [ ] Create `app/Http/Requests/Auth/LoginRequest.php`, `RegisterRequest.php`, `ChangePasswordRequest.php`
+- [ ] Create `app/Http/Resources/Auth/UserResource.php`
 - [ ] Create `app/Http/Middleware/CheckPermission.php`
 - [ ] Register auth routes: `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/me`, `/auth/refresh-token`, `/auth/change-password`, `/auth/forgot-password`, `/auth/reset-password`
 - [ ] Configure rate limiting in AppServiceProvider: login 5/min, api 60/min
@@ -60,14 +65,14 @@ Each task is self-contained and can be executed independently by KIRO. Tasks are
 - [ ] Create migration `create_permission_role_table` (pivot) — role_id FK, permission_id FK. Primary key: (role_id, permission_id)
 - [ ] Create migration `create_role_user_table` (pivot) — id, role_id FK, user_id FK, company_id FK, timestamps. Unique: (role_id, user_id, company_id). This allows a user to have different roles per company.
 - [ ] **NO `user_permissions` table** — permissions are ONLY assigned to roles, never directly to users
-- [ ] Create `app/Domain/Auth/Models/Role.php` — relationships: permissions() BelongsToMany, users() BelongsToMany (with company_id pivot). Scope: forCompany($companyId)
-- [ ] Create `app/Domain/Auth/Models/Permission.php` — relationships: roles() BelongsToMany
-- [ ] Create `app/Domain/Auth/Services/RoleService.php` — create, update, delete, assignPermissions(Role, array $permissionIds), revokePermissions(Role, array $permissionIds), syncPermissions(Role, array $permissionIds), assignToUser(Role, User, Company), removeFromUser(Role, User, Company)
-- [ ] Create `app/Domain/Auth/Services/PermissionService.php` — seedAllPermissions(), getByModule(string $module), getAllGroupedByModule(): array. NO userCan — that logic lives in User::hasPermission()
-- [ ] Create `app/Domain/Auth/Controllers/RoleController.php`, `PermissionController.php`
-- [ ] Create `app/Domain/Auth/Requests/StoreRoleRequest.php`, `UpdateRoleRequest.php`
-- [ ] Create `app/Domain/Auth/Resources/RoleResource.php`, `PermissionResource.php`
-- [ ] Create `app/Domain/Auth/Policies/RolePolicy.php`
+- [ ] Create `app/Models/Auth/Role.php` — relationships: permissions() BelongsToMany, users() BelongsToMany (with company_id pivot). Scope: forCompany($companyId)
+- [ ] Create `app/Models/Auth/Permission.php` — relationships: roles() BelongsToMany
+- [ ] Create `app/Services/Auth/RoleService.php` — create, update, delete, assignPermissions(Role, array $permissionIds), revokePermissions(Role, array $permissionIds), syncPermissions(Role, array $permissionIds), assignToUser(Role, User, Company), removeFromUser(Role, User, Company)
+- [ ] Create `app/Services/Auth/PermissionService.php` — seedAllPermissions(), getByModule(string $module), getAllGroupedByModule(): array. NO userCan — that logic lives in User::hasPermission()
+- [ ] Create `app/Http/Controllers/Auth/RoleController.php`, `PermissionController.php`
+- [ ] Create `app/Http/Requests/Auth/StoreRoleRequest.php`, `UpdateRoleRequest.php`
+- [ ] Create `app/Http/Resources/Auth/RoleResource.php`, `PermissionResource.php`
+- [ ] Create `app/Policies/Auth/RolePolicy.php`
 - [ ] Create `database/seeders/PermissionSeeder.php` — generate all ~480 permissions
 - [ ] Create `database/seeders/RoleSeeder.php` — 5 default roles with permission assignments
 - [ ] Register routes: `/roles` CRUD + `/roles/{role}/permissions`, `/permissions`
@@ -96,9 +101,9 @@ Each task is self-contained and can be executed independently by KIRO. Tasks are
 
 ## TASK 6: Sales — Customers
 - [ ] Create migration `create_customers_table`
-- [ ] Create `app/Domain/Sales/Models/Customer.php` — BelongsToCompany, SoftDeletes
-- [ ] Create `app/Domain/Sales/Services/CustomerService.php` — CRUD, search, balance update, credit check
-- [ ] Create `app/Domain/Sales/Controllers/CustomerController.php`
+- [ ] Create `app/Models/Sales/Customer.php` — BelongsToCompany, SoftDeletes
+- [ ] Create `app/Services/Sales/CustomerService.php` — CRUD, search, balance update, credit check
+- [ ] Create `app/Http/Controllers/Sales/CustomerController.php`
 - [ ] Create FormRequests, Resources, Policy, Factory
 - [ ] Register routes: `/customers` CRUD + search
 - [ ] Create tests: CustomerTest (CRUD, search, tenant isolation)

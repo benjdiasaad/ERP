@@ -28,35 +28,91 @@
 └─────────────────────────────────────────────────────┘
 ```
 
-## Domain Folder Structure
+## Folder Structure (Standard Laravel MVC + Domain Subfolders)
 
 ```
-app/Domain/
-├── Auth/          → User, Role, Permission, AuthService, RoleService, PermissionService
-├── Company/       → Company, CompanyService, EnsureCompanyAccess middleware
-├── Personnel/     → Personnel, Department, Position, Contract, Leave, Attendance + services
-├── Sales/         → Customer, Quote, QuoteLine, SalesOrder, SalesOrderLine, Invoice, InvoiceLine, CreditNote, CreditNoteLine, DeliveryNote, DeliveryNoteLine + services
-├── Purchasing/    → Supplier, PurchaseRequest, PurchaseRequestLine, PurchaseOrder, PurchaseOrderLine, ReceptionNote, ReceptionNoteLine, PurchaseInvoice, PurchaseInvoiceLine + services
-├── Inventory/     → Product, ProductCategory, Warehouse, StockMovement, StockLevel, StockInventory, StockInventoryLine + services
-├── Finance/       → Currency, Tax, PaymentTerm, PaymentMethod, ChartOfAccount, BankAccount, JournalEntry, JournalEntryLine, Payment + services
-├── Caution/       → CautionType, Caution, CautionHistory + services
-├── Event/         → EventCategory, Event, EventParticipant + services
-├── CRM/           → Contact, Lead, Opportunity, Activity + services
-├── Project/       → Project, Task, Timesheet + services
-└── Settings/      → Setting, Sequence, AuditLog, Notification, Attachment + services
+app/
+├── Models/
+│   ├── Auth/              → User.php, Role.php, Permission.php
+│   ├── Company/           → Company.php
+│   ├── Personnel/         → Personnel.php, Department.php, Position.php, Contract.php, Leave.php, Attendance.php
+│   ├── Sales/             → Customer.php, Quote.php, QuoteLine.php, SalesOrder.php, SalesOrderLine.php, Invoice.php, InvoiceLine.php, CreditNote.php, CreditNoteLine.php, DeliveryNote.php, DeliveryNoteLine.php
+│   ├── Purchasing/        → Supplier.php, PurchaseRequest.php, PurchaseRequestLine.php, PurchaseOrder.php, PurchaseOrderLine.php, ReceptionNote.php, ReceptionNoteLine.php, PurchaseInvoice.php, PurchaseInvoiceLine.php
+│   ├── Inventory/         → Product.php, ProductCategory.php, Warehouse.php, StockMovement.php, StockLevel.php, StockInventory.php, StockInventoryLine.php
+│   ├── Finance/           → Currency.php, Tax.php, PaymentTerm.php, PaymentMethod.php, ChartOfAccount.php, BankAccount.php, JournalEntry.php, JournalEntryLine.php, Payment.php
+│   ├── Caution/           → CautionType.php, Caution.php, CautionHistory.php
+│   ├── Event/             → EventCategory.php, Event.php, EventParticipant.php
+│   ├── CRM/               → Contact.php, Lead.php, Opportunity.php, Activity.php
+│   ├── Project/           → Project.php, Task.php, Timesheet.php
+│   └── Settings/          → Setting.php, Sequence.php, AuditLog.php, Notification.php, Attachment.php
+│
+├── Http/
+│   ├── Controllers/
+│   │   ├── Auth/          → AuthController.php, RoleController.php, PermissionController.php
+│   │   ├── Company/       → CompanyController.php
+│   │   ├── Personnel/     → PersonnelController.php, DepartmentController.php, PositionController.php, ContractController.php, LeaveController.php, AttendanceController.php
+│   │   ├── Sales/         → CustomerController.php, QuoteController.php, SalesOrderController.php, InvoiceController.php, CreditNoteController.php, DeliveryNoteController.php
+│   │   ├── Purchasing/    → SupplierController.php, PurchaseRequestController.php, PurchaseOrderController.php, ReceptionNoteController.php, PurchaseInvoiceController.php
+│   │   ├── Inventory/     → ProductController.php, ProductCategoryController.php, WarehouseController.php, StockMovementController.php, StockInventoryController.php
+│   │   ├── Finance/       → CurrencyController.php, TaxController.php, ChartOfAccountController.php, BankAccountController.php, JournalEntryController.php, PaymentController.php
+│   │   ├── Caution/       → CautionTypeController.php, CautionController.php
+│   │   ├── Event/         → EventCategoryController.php, EventController.php, EventParticipantController.php
+│   │   ├── CRM/           → ContactController.php, LeadController.php, OpportunityController.php, ActivityController.php
+│   │   ├── Project/       → ProjectController.php, TaskController.php, TimesheetController.php
+│   │   └── Settings/      → SettingController.php, SequenceController.php, NotificationController.php
+│   │
+│   ├── Requests/
+│   │   ├── Auth/          → LoginRequest.php, RegisterRequest.php, ChangePasswordRequest.php, StoreRoleRequest.php, UpdateRoleRequest.php
+│   │   ├── Company/       → StoreCompanyRequest.php, UpdateCompanyRequest.php
+│   │   ├── Sales/         → StoreQuoteRequest.php, UpdateQuoteRequest.php, StoreInvoiceRequest.php, ...
+│   │   ├── Purchasing/    → StorePurchaseOrderRequest.php, ...
+│   │   └── ... (one subfolder per domain)
+│   │
+│   ├── Resources/
+│   │   ├── Auth/          → UserResource.php, RoleResource.php, PermissionResource.php
+│   │   ├── Company/       → CompanyResource.php
+│   │   ├── Sales/         → CustomerResource.php, QuoteResource.php, InvoiceResource.php, ...
+│   │   └── ... (one subfolder per domain)
+│   │
+│   └── Middleware/
+│       ├── SetCurrentCompany.php
+│       ├── CheckPermission.php
+│       └── AuditLog.php
+│
+├── Services/
+│   ├── Auth/              → AuthService.php, RoleService.php, PermissionService.php
+│   ├── Company/           → CompanyService.php
+│   ├── Personnel/         → PersonnelService.php, DepartmentService.php, ContractService.php, LeaveService.php, AttendanceService.php
+│   ├── Sales/             → CustomerService.php, QuoteService.php, SalesOrderService.php, InvoiceService.php, CreditNoteService.php, DeliveryNoteService.php
+│   ├── Purchasing/        → SupplierService.php, PurchaseRequestService.php, PurchaseOrderService.php, ReceptionNoteService.php, PurchaseInvoiceService.php
+│   ├── Inventory/         → ProductService.php, ProductCategoryService.php, WarehouseService.php, StockMovementService.php, StockInventoryService.php
+│   ├── Finance/           → CurrencyService.php, TaxService.php, ChartOfAccountService.php, BankAccountService.php, JournalEntryService.php, PaymentService.php
+│   ├── Caution/           → CautionTypeService.php, CautionService.php
+│   ├── Event/             → EventService.php, EventCategoryService.php, EventParticipantService.php
+│   ├── CRM/               → ContactService.php, LeadService.php, OpportunityService.php, ActivityService.php
+│   ├── Project/           → ProjectService.php, TaskService.php, TimesheetService.php
+│   └── Settings/          → SettingService.php, SequenceService.php, AuditLogService.php, NotificationService.php, AttachmentService.php
+│
+├── Policies/
+│   ├── Auth/              → RolePolicy.php
+│   ├── Company/           → CompanyPolicy.php
+│   ├── Sales/             → QuotePolicy.php, InvoicePolicy.php, ...
+│   └── ... (one subfolder per domain)
+│
+└── Traits/
+    ├── BelongsToCompany.php
+    ├── HasAuditTrail.php
+    ├── GeneratesReference.php
+    └── HasStatus.php
 ```
 
-Each domain folder contains:
-```
-{Module}/
-├── Models/         → Eloquent models
-├── Services/       → Business logic classes
-├── Controllers/    → HTTP controllers
-├── Requests/       → FormRequest validation classes
-├── Resources/      → API Resource transformers
-├── Policies/       → Authorization policies
-└── Tests/          → Module-specific tests (optional, can also be in tests/)
-```
+**Namespace examples:**
+- `App\Models\Sales\Invoice`
+- `App\Http\Controllers\Sales\InvoiceController`
+- `App\Services\Sales\InvoiceService`
+- `App\Http\Requests\Sales\StoreInvoiceRequest`
+- `App\Http\Resources\Sales\InvoiceResource`
+- `App\Policies\Sales\InvoicePolicy`
 
 ## Multi-Tenancy Design
 
