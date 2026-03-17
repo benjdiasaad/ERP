@@ -10,6 +10,7 @@ use App\Models\Personnel\Leave;
 use App\Models\Personnel\Personnel;
 use App\Models\Personnel\Position;
 use App\Models\Sales\Customer;
+use App\Models\Sales\Quote;
 use App\Policies\Company\CompanyPolicy;
 use App\Policies\Personnel\AttendancePolicy;
 use App\Policies\Personnel\ContractPolicy;
@@ -18,6 +19,7 @@ use App\Policies\Personnel\LeavePolicy;
 use App\Policies\Personnel\PersonnelPolicy;
 use App\Policies\Personnel\PositionPolicy;
 use App\Policies\Sales\CustomerPolicy;
+use App\Policies\Sales\QuotePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Leave::class, LeavePolicy::class);
         Gate::policy(Attendance::class, AttendancePolicy::class);
         Gate::policy(Customer::class, CustomerPolicy::class);
+        Gate::policy(Quote::class, QuotePolicy::class);
 
         RateLimiter::for('login', fn (Request $request) =>
             Limit::perMinute(5)->by($request->ip())

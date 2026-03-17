@@ -40,14 +40,17 @@ trait HasStatus
             $from = $model->getOriginal($column);
             $to   = $model->getAttribute($column);
 
-            if ($from !== null && !$model->canTransitionTo($to)) {
+            if ($from !== null && !$model->canTransitionFromTo($from, $to)) {
+                $map     = $model->getStatusTransitions();
+                $allowed = $map[$from] ?? [];
+
                 throw new InvalidArgumentException(
                     sprintf(
                         'Invalid status transition on %s: "%s" → "%s". Allowed: [%s].',
                         class_basename($model),
                         $from,
                         $to,
-                        implode(', ', $model->getAllowedTransitions())
+                        implode(', ', $allowed)
                     )
                 );
             }
@@ -64,6 +67,15 @@ trait HasStatus
     public function canTransitionTo(string $status): bool
     {
         return in_array($status, $this->getAllowedTransitions(), true);
+    }
+
+    /**
+     * Check whether transitioning from $from to $to is allowed.
+     */
+    public function canTransitionFromTo(string $from, string $to): bool
+    {
+        $map = $this->getStatusTransitions();
+        return in_array($to, $map[$from] ?? [], true);
     }
 
     /**

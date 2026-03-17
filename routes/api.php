@@ -13,6 +13,7 @@ use App\Http\Controllers\Personnel\LeaveController;
 use App\Http\Controllers\Personnel\PersonnelController;
 use App\Http\Controllers\Personnel\PositionController;
 use App\Http\Controllers\Sales\CustomerController;
+use App\Http\Controllers\Sales\QuoteController;
 use Illuminate\Support\Facades\Route;
 
 // Public auth routes
@@ -116,4 +117,17 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
     Route::middleware('permission:customers.update')->put('customers/{customer}', [CustomerController::class, 'update']);
     Route::middleware('permission:customers.delete')->delete('customers/{customer}', [CustomerController::class, 'destroy']);
     Route::middleware('permission:customers.view')->get('customers/{customer}/credit-info', [CustomerController::class, 'creditInfo']);
+
+    // Sales — Quotes
+    Route::middleware('permission:quotes.view_any')->get('quotes', [QuoteController::class, 'index']);
+    Route::middleware('permission:quotes.create')->post('quotes', [QuoteController::class, 'store']);
+    Route::middleware('permission:quotes.view')->get('quotes/{quote}', [QuoteController::class, 'show']);
+    Route::middleware('permission:quotes.update')->put('quotes/{quote}', [QuoteController::class, 'update']);
+    Route::middleware('permission:quotes.delete')->delete('quotes/{quote}', [QuoteController::class, 'destroy']);
+    Route::middleware('permission:quotes.send')->post('quotes/{quote}/send', [QuoteController::class, 'send']);
+    Route::middleware('permission:quotes.update')->post('quotes/{quote}/accept', [QuoteController::class, 'accept']);
+    Route::middleware('permission:quotes.update')->post('quotes/{quote}/reject', [QuoteController::class, 'reject']);
+    Route::middleware('permission:quotes.create')->post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate']);
+    Route::middleware('permission:quotes.convert')->post('quotes/{quote}/convert-to-order', [QuoteController::class, 'convertToOrder']);
+    Route::middleware('permission:quotes.view')->get('quotes/{quote}/pdf', [QuoteController::class, 'pdf']);
 });
