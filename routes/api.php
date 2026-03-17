@@ -6,6 +6,12 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PermissionController;
 use App\Http\Controllers\Auth\RoleController;
 use App\Http\Controllers\Company\CompanyController;
+use App\Http\Controllers\Personnel\AttendanceController;
+use App\Http\Controllers\Personnel\ContractController;
+use App\Http\Controllers\Personnel\DepartmentController;
+use App\Http\Controllers\Personnel\LeaveController;
+use App\Http\Controllers\Personnel\PersonnelController;
+use App\Http\Controllers\Personnel\PositionController;
 use Illuminate\Support\Facades\Route;
 
 // Public auth routes
@@ -61,4 +67,43 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
         Route::get('permissions/grouped', [PermissionController::class, 'grouped']);
         Route::get('permissions/{permission}', [PermissionController::class, 'show']);
     });
+
+    // Personnel Module
+    Route::middleware('permission:departments.view_any')->get('departments', [DepartmentController::class, 'index']);
+    Route::middleware('permission:departments.create')->post('departments', [DepartmentController::class, 'store']);
+    Route::middleware('permission:departments.view')->get('departments/{department}', [DepartmentController::class, 'show']);
+    Route::middleware('permission:departments.update')->put('departments/{department}', [DepartmentController::class, 'update']);
+    Route::middleware('permission:departments.delete')->delete('departments/{department}', [DepartmentController::class, 'destroy']);
+
+    Route::middleware('permission:positions.view_any')->get('positions', [PositionController::class, 'index']);
+    Route::middleware('permission:positions.create')->post('positions', [PositionController::class, 'store']);
+    Route::middleware('permission:positions.view')->get('positions/{position}', [PositionController::class, 'show']);
+    Route::middleware('permission:positions.update')->put('positions/{position}', [PositionController::class, 'update']);
+    Route::middleware('permission:positions.delete')->delete('positions/{position}', [PositionController::class, 'destroy']);
+
+    Route::middleware('permission:personnels.view_any')->get('personnels', [PersonnelController::class, 'index']);
+    Route::middleware('permission:personnels.create')->post('personnels', [PersonnelController::class, 'store']);
+    Route::middleware('permission:personnels.view')->get('personnels/{personnel}', [PersonnelController::class, 'show']);
+    Route::middleware('permission:personnels.update')->put('personnels/{personnel}', [PersonnelController::class, 'update']);
+    Route::middleware('permission:personnels.delete')->delete('personnels/{personnel}', [PersonnelController::class, 'destroy']);
+
+    Route::middleware('permission:contracts.view_any')->get('contracts', [ContractController::class, 'index']);
+    Route::middleware('permission:contracts.create')->post('contracts', [ContractController::class, 'store']);
+    Route::middleware('permission:contracts.view')->get('contracts/{contract}', [ContractController::class, 'show']);
+    Route::middleware('permission:contracts.update')->put('contracts/{contract}', [ContractController::class, 'update']);
+    Route::middleware('permission:contracts.delete')->delete('contracts/{contract}', [ContractController::class, 'destroy']);
+
+    Route::middleware('permission:leaves.view_any')->get('leaves', [LeaveController::class, 'index']);
+    Route::middleware('permission:leaves.create')->post('leaves', [LeaveController::class, 'store']);
+    Route::middleware('permission:leaves.view')->get('leaves/{leave}', [LeaveController::class, 'show']);
+    Route::middleware('permission:leaves.update')->put('leaves/{leave}', [LeaveController::class, 'update']);
+    Route::middleware('permission:leaves.delete')->delete('leaves/{leave}', [LeaveController::class, 'destroy']);
+    Route::middleware('permission:leaves.update')->post('leaves/{leave}/approve', [LeaveController::class, 'approve']);
+    Route::middleware('permission:leaves.update')->post('leaves/{leave}/reject', [LeaveController::class, 'reject']);
+
+    Route::middleware('permission:attendances.view_any')->get('attendances', [AttendanceController::class, 'index']);
+    Route::middleware('permission:attendances.create')->post('attendances', [AttendanceController::class, 'store']);
+    Route::middleware('permission:attendances.view')->get('attendances/{attendance}', [AttendanceController::class, 'show']);
+    Route::middleware('permission:attendances.update')->put('attendances/{attendance}', [AttendanceController::class, 'update']);
+    Route::middleware('permission:attendances.delete')->delete('attendances/{attendance}', [AttendanceController::class, 'destroy']);
 });
