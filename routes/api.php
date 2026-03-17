@@ -12,6 +12,7 @@ use App\Http\Controllers\Personnel\DepartmentController;
 use App\Http\Controllers\Personnel\LeaveController;
 use App\Http\Controllers\Personnel\PersonnelController;
 use App\Http\Controllers\Personnel\PositionController;
+use App\Http\Controllers\Sales\CustomerController;
 use Illuminate\Support\Facades\Route;
 
 // Public auth routes
@@ -106,4 +107,13 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
     Route::middleware('permission:attendances.view')->get('attendances/{attendance}', [AttendanceController::class, 'show']);
     Route::middleware('permission:attendances.update')->put('attendances/{attendance}', [AttendanceController::class, 'update']);
     Route::middleware('permission:attendances.delete')->delete('attendances/{attendance}', [AttendanceController::class, 'destroy']);
+
+    // Sales — Customers
+    Route::middleware('permission:customers.view_any')->get('customers', [CustomerController::class, 'index']);
+    Route::middleware('permission:customers.create')->post('customers', [CustomerController::class, 'store']);
+    Route::middleware('permission:customers.view_any')->get('customers/search', [CustomerController::class, 'search']);
+    Route::middleware('permission:customers.view')->get('customers/{customer}', [CustomerController::class, 'show']);
+    Route::middleware('permission:customers.update')->put('customers/{customer}', [CustomerController::class, 'update']);
+    Route::middleware('permission:customers.delete')->delete('customers/{customer}', [CustomerController::class, 'destroy']);
+    Route::middleware('permission:customers.view')->get('customers/{customer}/credit-info', [CustomerController::class, 'creditInfo']);
 });
