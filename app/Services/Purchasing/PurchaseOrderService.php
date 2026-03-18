@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Purchasing;
 
 use App\Models\Purchasing\PurchaseOrder;
+use App\Models\Purchasing\ReceptionNote;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -142,7 +143,7 @@ class PurchaseOrderService
 
     // ─── Document Generation (stubs) ─────────────────────────────────────────
 
-    public function generateReceptionNote(PurchaseOrder $order): array
+    public function generateReceptionNote(PurchaseOrder $order): ReceptionNote
     {
         if (!in_array($order->status, ['confirmed', 'in_progress'], true)) {
             throw ValidationException::withMessages([
@@ -150,8 +151,44 @@ class PurchaseOrderService
             ]);
         }
 
-        // TODO: Implement once ReceptionNote model is available (Task 14).
-        return ['message' => 'Reception note generation pending Task 14 implementation.', 'order_id' => $order->id];
+        return DB::transaction(function () use ($order): ReceptionNote {
+            $order->loadMissing('lines');
+
+            $year  = now()->year;
+            $count = ReceptionNote::withoutGlobalScopes()->whereYear('created_at', $year)->count() + 1;
+            $reference = sprintf('BR-%d-%05d', $year, $count);
+
+            $note = ReceptionNote::create([
+                'company_id'        => $order->company_id,
+                'reference'         => $reference,
+                'purchase_order_id' => $order->id,
+                'supplier_id'       => $order->supplier_id,
+                'status'            => 'draft',
+                'reception_date'    => now()->toDateString(),
+                'created_by'        => auth()->id(),
+            ]);
+
+            foreach ($order->lines as $line) {
+                $remaining = (float) $line->remainingToReceive();
+                if ($remaining <= 0) {
+                    continue;
+                }
+
+                $note->lines()->create([
+                    'company_id'             => $line->company_id,
+                    'purchase_order_line_id' => $line->id,
+                    'product_id'             => $line->product_id,
+                    'description'            => $line->description,
+                    'ordered_quantity'        => $line->quantity,
+                    'received_quantity'       => $remaining,
+                    'rejected_quantity'       => 0,
+                    'unit'                   => $line->unit,
+                    'sort_order'             => $line->sort_order,
+                ]);
+            }
+
+            return $note->fresh(['lines']);
+        });
     }
 
     public function generatePurchaseInvoice(PurchaseOrder $order): array

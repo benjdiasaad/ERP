@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Purchasing\StorePurchaseOrderRequest;
 use App\Http\Requests\Purchasing\UpdatePurchaseOrderRequest;
 use App\Http\Resources\Purchasing\PurchaseOrderResource;
+use App\Http\Resources\Purchasing\ReceptionNoteResource;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Services\Purchasing\PurchaseOrderService;
 use Illuminate\Http\JsonResponse;
@@ -126,17 +127,17 @@ class PurchaseOrderController extends Controller
         return new PurchaseOrderResource($purchaseOrder);
     }
 
-    public function generateReception(PurchaseOrder $purchaseOrder): JsonResponse
+    public function generateReception(PurchaseOrder $purchaseOrder): JsonResponse|ReceptionNoteResource
     {
         $this->authorize('generateReception', $purchaseOrder);
 
         try {
-            $result = $this->purchaseOrderService->generateReceptionNote($purchaseOrder);
+            $note = $this->purchaseOrderService->generateReceptionNote($purchaseOrder);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
 
-        return response()->json($result, 201);
+        return (new ReceptionNoteResource($note))->response()->setStatusCode(201);
     }
 
     public function generateInvoice(PurchaseOrder $purchaseOrder): JsonResponse
