@@ -31,6 +31,11 @@ trait HasAuditTrail
     private static function writeAuditLog(self $model, string $event, ?array $oldValues, ?array $newValues): void
     {
         try {
+            // Use a savepoint so a failed insert does not abort the outer
+            // PostgreSQL transaction (e.g. when the audit_logs table does not
+            // exist yet during early migrations or tests).
+            DB::statement('SAVEPOINT audit_log_savepoint');
+
             DB::table('audit_logs')->insert([
                 'model_type' => get_class($model),
                 'model_id' => $model->getKey(),
@@ -45,7 +50,13 @@ trait HasAuditTrail
                 'created_at' => now(),
             ]);
         } catch (\Throwable) {
-            // audit_logs table may not exist yet — silently skip
+            // audit_logs table may not exist yet — roll back to savepoint so
+            // the outer transaction remains usable (critical for PostgreSQL).
+            try {
+                DB::statement('ROLLBACK TO SAVEPOINT audit_log_savepoint');
+            } catch (\Throwable) {
+                // Savepoint may not exist if we are outside a transaction — ignore.
+            }
         }
     }
 }
