@@ -8,6 +8,7 @@ use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
 use App\Models\Auth\User;
 use App\Models\Company\Company;
+use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseRequest;
 use Tests\TestCase;
 
@@ -578,13 +579,37 @@ class PurchaseRequestTest extends TestCase
         $this->assertDatabaseHas('purchase_requests', ['id' => $id, 'status' => 'rejected']);
     }
 
-    // ─── Convert to Order (skipped — PurchaseOrder model not yet implemented) ─
+    // ─── Convert to Order ─────────────────────────────────────────────────────
 
-    public function test_convert_to_order_is_skipped_until_purchase_order_exists(): void
+    public function test_approved_purchase_request_can_be_converted_to_order(): void
     {
-        // PurchaseOrder model does not exist yet.
-        // This test will be implemented once App\Models\Purchasing\PurchaseOrder is available.
-        $this->markTestSkipped('PurchaseOrder model not yet implemented.');
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['purchase_requests.convert']);
+
+        $pr = PurchaseRequest::factory()->approved()->create(['company_id' => $company->id]);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/purchase-requests/{$pr->id}/convert-to-order");
+
+        $response->assertCreated()
+            ->assertJsonFragment(['message' => 'Purchase request successfully converted to purchase order.']);
+
+        $this->assertDatabaseHas('purchase_orders', [
+            'company_id'          => $company->id,
+            'purchase_request_id' => $pr->id,
+        ]);
+    }
+
+    public function test_non_approved_purchase_request_cannot_be_converted(): void
+    {
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['purchase_requests.convert']);
+
+        $pr = PurchaseRequest::factory()->draft()->create(['company_id' => $company->id]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/purchase-requests/{$pr->id}/convert-to-order")
+            ->assertUnprocessable();
     }
 
     // ─── Tenant Isolation ─────────────────────────────────────────────────────
