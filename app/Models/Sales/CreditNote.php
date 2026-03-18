@@ -16,53 +16,52 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class DeliveryNote extends Model
+class CreditNote extends Model
 {
     use BelongsToCompany, GeneratesReference, HasAuditTrail, HasFactory, HasStatus, SoftDeletes;
 
     protected array $statusTransitions = [
-        'draft'     => ['ready', 'cancelled'],
-        'ready'     => ['shipped', 'cancelled'],
-        'shipped'   => ['delivered', 'returned'],
-        'delivered' => ['returned'],
-        'returned'  => [],
-        'cancelled' => [],
+        'draft'     => ['confirmed'],
+        'confirmed' => ['applied'],
+        'applied'   => [],
     ];
 
     protected $fillable = [
         'company_id',
-        'reference',
-        'sales_order_id',
+        'invoice_id',
         'customer_id',
+        'reference',
+        'reason',
         'status',
         'date',
-        'expected_delivery_date',
-        'shipped_at',
-        'delivered_at',
-        'delivery_address',
-        'carrier',
-        'tracking_number',
+        'subtotal_ht',
+        'total_discount',
+        'total_tax',
+        'total_ttc',
         'notes',
         'created_by',
-        'shipped_by',
-        'delivered_by',
+        'confirmed_at',
+        'applied_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'date'                   => 'date',
-            'expected_delivery_date' => 'date',
-            'shipped_at'             => 'date',
-            'delivered_at'           => 'date',
+            'date'           => 'date',
+            'subtotal_ht'    => 'decimal:2',
+            'total_discount' => 'decimal:2',
+            'total_tax'      => 'decimal:2',
+            'total_ttc'      => 'decimal:2',
+            'confirmed_at'   => 'datetime',
+            'applied_at'     => 'datetime',
         ];
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────
 
-    public function salesOrder(): BelongsTo
+    public function invoice(): BelongsTo
     {
-        return $this->belongsTo(SalesOrder::class);
+        return $this->belongsTo(Invoice::class);
     }
 
     public function customer(): BelongsTo
@@ -72,22 +71,12 @@ class DeliveryNote extends Model
 
     public function lines(): HasMany
     {
-        return $this->hasMany(DeliveryNoteLine::class)->orderBy('sort_order');
+        return $this->hasMany(CreditNoteLine::class)->orderBy('sort_order');
     }
 
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function shippedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'shipped_by');
-    }
-
-    public function deliveredBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'delivered_by');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
