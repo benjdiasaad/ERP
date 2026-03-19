@@ -22,8 +22,8 @@ class DeliveryNoteLineResource extends JsonResource
             'shipped_quantity'    => $this->shipped_quantity,
             'returned_quantity'   => $this->returned_quantity,
             'unit'                => $this->unit,
-            'sort_order'          => $this->sort_order,
             'notes'               => $this->notes,
+            'sort_order'          => $this->sort_order,
         ];
     }
 }

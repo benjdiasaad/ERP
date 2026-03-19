@@ -54,6 +54,11 @@ class DeliveryNotePolicy
         return $user->hasPermission('delivery_notes.deliver');
     }
 
+    public function return(User $user, DeliveryNote $deliveryNote): bool
+    {
+        return $user->hasPermission('delivery_notes.return');
+    }
+
     public function print(User $user, DeliveryNote $deliveryNote): bool
     {
         return $user->hasPermission('delivery_notes.print');
