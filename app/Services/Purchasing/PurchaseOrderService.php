@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Models\Purchasing\PurchaseInvoice;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\ReceptionNote;
 use Illuminate\Support\Arr;
