@@ -14,10 +14,14 @@ use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\ReceptionNote;
 use App\Models\Purchasing\PurchaseInvoice;
 use App\Models\Sales\Customer;
+use App\Models\Inventory\Product;
+use App\Models\Inventory\ProductCategory;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\Quote;
 use App\Models\Sales\SalesOrder;
 use App\Policies\Company\CompanyPolicy;
+use App\Policies\Inventory\ProductCategoryPolicy;
+use App\Policies\Inventory\ProductPolicy;
 use App\Policies\Personnel\AttendancePolicy;
 use App\Policies\Purchasing\PurchaseRequestPolicy;
 use App\Policies\Purchasing\PurchaseOrderPolicy;
@@ -68,6 +72,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Quote::class, QuotePolicy::class);
         Gate::policy(SalesOrder::class, SalesOrderPolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
+        Gate::policy(Product::class, ProductPolicy::class);
+        Gate::policy(ProductCategory::class, ProductCategoryPolicy::class);
 
         RateLimiter::for('login', fn (Request $request) =>
             Limit::perMinute(5)->by($request->ip())
