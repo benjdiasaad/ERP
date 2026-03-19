@@ -5,37 +5,33 @@ declare(strict_types=1);
 namespace App\Models\Finance;
 
 use App\Traits\BelongsToCompany;
-use Database\Factories\Finance\CurrencyFactory;
+use Database\Factories\Finance\PaymentMethodFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Currency extends Model
+class PaymentMethod extends Model
 {
     use BelongsToCompany, HasFactory, SoftDeletes;
 
     protected static function newFactory(): Factory
     {
-        return CurrencyFactory::new();
+        return PaymentMethodFactory::new();
     }
 
     protected $fillable = [
         'company_id',
-        'code',
         'name',
-        'symbol',
-        'exchange_rate',
-        'is_default',
+        'type',
+        'description',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'exchange_rate' => 'decimal:6',
-            'is_default'    => 'boolean',
-            'is_active'     => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 }

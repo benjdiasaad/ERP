@@ -8,20 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('currencies', function (Blueprint $table) {
+        Schema::create('taxes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
-            $table->string('code', 3);
             $table->string('name');
-            $table->string('symbol', 10);
-            $table->decimal('exchange_rate', 15, 6)->default(1);
-            $table->boolean('is_default')->default(false);
+            $table->decimal('rate', 5, 2);
+            $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();
-
-            // Unique constraint: code per company (null company_id = global currency)
-            $table->unique(['company_id', 'code']);
 
             // Indexes for performance
             $table->index('company_id');
@@ -31,6 +26,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('currencies');
+        Schema::dropIfExists('taxes');
     }
 };
