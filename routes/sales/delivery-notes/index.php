@@ -19,4 +19,6 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
 
     Route::middleware('permission:delivery_notes.deliver')->post('delivery-notes/{deliveryNote}/deliver', [DeliveryNoteController::class, 'deliver'])->name('delivery-notes.deliver');
 
+    Route::middleware('permission:delivery_notes.return')->post('delivery-notes/{deliveryNote}/return', [DeliveryNoteController::class, 'return'])->name('delivery-notes.return');
+
 });

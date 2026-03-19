@@ -21,12 +21,13 @@ class CreditNoteLineResource extends JsonResource
             'unit_price_ht'    => $this->unit_price_ht,
             'discount_type'    => $this->discount_type,
             'discount_value'   => $this->discount_value,
-            'subtotal_ht'      => $this->subtotal_ht,
-            'discount_amount'  => $this->discount_amount,
             'tax_rate'         => $this->tax_rate,
+            'subtotal_ht'      => $this->subtotal_ht,
             'tax_amount'       => $this->tax_amount,
             'total_ttc'        => $this->total_ttc,
             'sort_order'       => $this->sort_order,
+            'created_at'       => $this->created_at?->toISOString(),
+            'updated_at'       => $this->updated_at?->toISOString(),
         ];
     }
 }

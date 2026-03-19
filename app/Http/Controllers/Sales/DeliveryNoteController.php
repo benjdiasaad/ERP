@@ -51,7 +51,7 @@ class DeliveryNoteController extends Controller
     {
         $this->authorize('view', $deliveryNote);
 
-        $deliveryNote->load(['customer', 'salesOrder', 'lines', 'createdBy']);
+        $deliveryNote->load(['customer', 'salesOrder', 'lines', 'createdBy', 'shippedBy', 'deliveredBy']);
 
         return new DeliveryNoteResource($deliveryNote);
     }
@@ -78,9 +78,9 @@ class DeliveryNoteController extends Controller
         return response()->json(null, 204);
     }
 
-    public function ship(Request $request, DeliveryNote $deliveryNote): DeliveryNoteResource|JsonResponse
+    public function ship(Request $request, DeliveryNote $deliveryNote): DeliveryNoteResource
     {
-        $this->authorize('update', $deliveryNote);
+        $this->authorize('ship', $deliveryNote);
 
         $request->validate([
             'shipped_at'      => ['nullable', 'date'],
@@ -93,20 +93,37 @@ class DeliveryNoteController extends Controller
                 'shipped_at', 'carrier', 'tracking_number',
             ]));
         } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            abort(422, $e->getMessage());
         }
 
         return new DeliveryNoteResource($deliveryNote);
     }
 
-    public function deliver(DeliveryNote $deliveryNote): DeliveryNoteResource|JsonResponse
+    public function deliver(DeliveryNote $deliveryNote): DeliveryNoteResource
     {
-        $this->authorize('update', $deliveryNote);
+        $this->authorize('deliver', $deliveryNote);
 
         try {
             $deliveryNote = $this->deliveryNoteService->deliver($deliveryNote);
         } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            abort(422, $e->getMessage());
+        }
+
+        return new DeliveryNoteResource($deliveryNote);
+    }
+
+    public function return(Request $request, DeliveryNote $deliveryNote): DeliveryNoteResource
+    {
+        $this->authorize('return', $deliveryNote);
+
+        $request->validate([
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $deliveryNote = $this->deliveryNoteService->return($deliveryNote, $request->reason);
+        } catch (ValidationException $e) {
+            abort(422, $e->getMessage());
         }
 
         return new DeliveryNoteResource($deliveryNote);

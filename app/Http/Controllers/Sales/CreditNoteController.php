@@ -30,6 +30,7 @@ class CreditNoteController extends Controller
             ->when($request->search, fn ($q) => $q->where('reference', 'like', "%{$request->search}%"))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->when($request->invoice_id, fn ($q) => $q->where('invoice_id', $request->invoice_id))
             ->latest()
             ->paginate($request->integer('per_page', 15));
 
@@ -78,33 +79,32 @@ class CreditNoteController extends Controller
         return response()->json(null, 204);
     }
 
-    public function confirm(CreditNote $creditNote): CreditNoteResource|JsonResponse
+    public function confirm(CreditNote $creditNote): CreditNoteResource
     {
-        $this->authorize('update', $creditNote);
+        $this->authorize('confirm', $creditNote);
 
         try {
             $creditNote = $this->creditNoteService->confirm($creditNote);
         } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            abort(422, $e->getMessage());
         }
 
         return new CreditNoteResource($creditNote);
     }
 
-    public function apply(Request $request, CreditNote $creditNote): CreditNoteResource|JsonResponse
+    public function apply(Request $request, CreditNote $creditNote): CreditNoteResource
     {
-        $this->authorize('update', $creditNote);
+        $this->authorize('apply', $creditNote);
 
         $request->validate([
             'invoice_id' => ['required', 'integer', 'exists:invoices,id'],
         ]);
 
-        $invoice = Invoice::findOrFail($request->invoice_id);
-
         try {
+            $invoice = Invoice::findOrFail($request->invoice_id);
             $creditNote = $this->creditNoteService->applyToInvoice($creditNote, $invoice);
         } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            abort(422, $e->getMessage());
         }
 
         return new CreditNoteResource($creditNote);

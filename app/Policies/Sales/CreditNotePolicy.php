@@ -54,13 +54,13 @@ class CreditNotePolicy
         return $user->hasPermission('credit_notes.apply');
     }
 
-    public function print(User $user, CreditNote $creditNote): bool
-    {
-        return $user->hasPermission('credit_notes.print');
-    }
-
     public function export(User $user): bool
     {
         return $user->hasPermission('credit_notes.export');
+    }
+
+    public function print(User $user, CreditNote $creditNote): bool
+    {
+        return $user->hasPermission('credit_notes.print');
     }
 }
