@@ -3,6 +3,7 @@
 namespace App\Models\Event;
 
 use App\Traits\BelongsToCompany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,11 +11,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
 {
-    use BelongsToCompany, SoftDeletes;
+    use BelongsToCompany, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'company_id',
         'event_category_id',
+        'reference',
         'title',
         'type',
         'location',
@@ -26,6 +28,17 @@ class Event extends Model
         'recurring_pattern',
         'status',
         'created_by',
+        'updated_by',
+        'confirmed_by',
+        'confirmed_at',
+        'cancelled_by',
+        'cancelled_at',
+        'cancellation_reason',
+        'completed_by',
+        'completed_at',
+        'postponed_by',
+        'postponed_at',
+        'postponement_reason',
     ];
 
     protected $casts = [

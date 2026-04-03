@@ -126,7 +126,7 @@ class EventController extends Controller
     {
         $this->authorize('viewAny', Event::class);
 
-        $limit = $request->query('limit');
+        $limit = $request->query('limit') ? (int) $request->query('limit') : null;
         $events = $this->eventService->getUpcoming($limit);
 
         return EventResource::collection($events);

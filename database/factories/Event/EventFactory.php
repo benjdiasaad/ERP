@@ -14,12 +14,13 @@ class EventFactory extends Factory
 
     public function definition(): array
     {
-        $startDate = $this->faker->dateTimeBetween('-1 month', '+3 months');
-        $endDate = $this->faker->dateTimeBetween($startDate, '+1 week');
+        $startDate = $this->faker->dateTimeBetween('now', '+3 months');
+        $endDate = (clone $startDate)->modify('+' . $this->faker->numberBetween(1, 7) . ' days');
 
         return [
             'company_id'        => Company::factory(),
             'event_category_id' => EventCategory::factory(),
+            'reference'         => 'EVT-' . date('Y') . '-' . str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
             'title'             => $this->faker->sentence(4),
             'type'              => $this->faker->randomElement(['meeting', 'conference', 'training', 'workshop', 'social', 'holiday']),
             'location'          => $this->faker->optional()->address(),

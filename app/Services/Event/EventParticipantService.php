@@ -45,6 +45,7 @@ class EventParticipantService
             }
 
             $data['company_id'] = $event->company_id;
+            $data['event_id'] = $event->id;
             $data['rsvp_status'] = $data['rsvp_status'] ?? 'pending';
             $data['role'] = $data['role'] ?? 'attendee';
 

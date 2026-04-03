@@ -24,6 +24,10 @@ class EventService
             $data['created_by'] = auth()->id();
             $data['status'] = $data['status'] ?? 'planned';
 
+            if (empty($data['reference'])) {
+                $data['reference'] = 'EVT-' . date('Y') . '-' . str_pad((string) (Event::withoutGlobalScopes()->count() + 1), 5, '0', STR_PAD_LEFT);
+            }
+
             return Event::create($data);
         });
     }

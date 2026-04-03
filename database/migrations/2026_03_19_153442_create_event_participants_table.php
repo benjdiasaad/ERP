@@ -15,18 +15,17 @@ return new class extends Migration
             $table->id();
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('event_id')->constrained('events')->cascadeOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
-            $table->string('external_name')->nullable();
-            $table->string('external_email')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('personnel_id')->nullable()->constrained('personnels')->nullOnDelete();
+            $table->string('name')->nullable();
+            $table->string('email')->nullable();
             $table->enum('role', ['organizer', 'speaker', 'attendee', 'guest'])->default('attendee');
-            $table->enum('status', ['invited', 'confirmed', 'declined', 'tentative', 'attended', 'no_show'])->default('invited');
-            $table->timestamp('response_at')->nullable();
+            $table->enum('rsvp_status', ['pending', 'confirmed', 'declined'])->default('pending');
             $table->timestamps();
             $table->softDeletes();
 
             $table->index(['company_id', 'event_id']);
-            $table->index(['event_id', 'status']);
-            $table->unique(['event_id', 'user_id']);
+            $table->index(['event_id', 'rsvp_status']);
         });
     }
 

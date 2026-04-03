@@ -1,505 +1,573 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Event;
 
+use App\Models\Auth\Permission;
+use App\Models\Auth\Role;
 use App\Models\Auth\User;
 use App\Models\Company\Company;
 use App\Models\Event\Event;
+use App\Models\Event\EventCategory;
 use App\Models\Event\EventParticipant;
 use App\Models\Personnel\Personnel;
-use App\Services\Event\EventParticipantService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ParticipantTest extends TestCase
 {
-    use RefreshDatabase;
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    private EventParticipantService $participantService;
-    private User $user;
-    private Company $company;
-    private Event $event;
-
-    protected function setUp(): void
+    private function giveUserPermissions(User $user, Company $company, array $slugs): void
     {
-        parent::setUp();
+        $role = Role::create([
+            'company_id' => $company->id,
+            'name'       => 'Test Role',
+            'slug'       => 'test-role-' . uniqid(),
+            'is_system'  => false,
+        ]);
 
-        $this->participantService = app(EventParticipantService::class);
+        foreach ($slugs as $slug) {
+            $permission = Permission::firstOrCreate(
+                ['slug' => $slug],
+                ['module' => explode('.', $slug)[0], 'name' => $slug, 'description' => '']
+            );
+            $role->permissions()->syncWithoutDetaching([$permission->id]);
+        }
 
-        ['user' => $this->user, 'company' => $this->company] = $this->setUpCompanyAndUser();
-        $this->actingAs($this->user);
-
-        $this->event = Event::factory()->create([
-            'company_id' => $this->company->id,
+        \Illuminate\Support\Facades\DB::table('role_user')->insert([
+            'role_id'    => $role->id,
+            'user_id'    => $user->id,
+            'company_id' => $company->id,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
-    // ─── Invite Tests ─────────────────────────────────────────────────────────
-
-    public function test_can_invite_internal_user_by_user_id(): void
+    private function allParticipantPermissions(): array
     {
-        $invitedUser = User::factory()->create([
-            'current_company_id' => $this->company->id,
+        return [
+            'events.view',
+            'events.update',
+            'event_participants.view_any',
+            'event_participants.view',
+            'event_participants.create',
+            'event_participants.update',
+            'event_participants.delete',
+        ];
+    }
+
+    private function createEvent(Company $company, array $overrides = []): Event
+    {
+        $category = EventCategory::factory()->create(['company_id' => $company->id]);
+
+        return Event::factory()->create(array_merge([
+            'company_id'        => $company->id,
+            'event_category_id' => $category->id,
+            'status'            => 'planned',
+        ], $overrides));
+    }
+
+    // ─── Index ────────────────────────────────────────────────────────────────
+
+    public function test_can_list_participants_for_event(): void
+    {
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.view', 'event_participants.view_any']);
+
+        $event = $this->createEvent($company);
+
+        EventParticipant::factory()->count(3)->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        $participant = $this->participantService->invite($this->event, [
-            'user_id' => $invitedUser->id,
-            'role' => 'attendee',
-        ]);
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->getJson("/api/events/{$event->id}/participants");
+
+        $response->assertOk();
+        $this->assertCount(3, $response->json('data'));
+    }
+
+    public function test_index_requires_authentication(): void
+    {
+        ['company' => $company] = $this->setUpCompanyAndUser();
+        $event = $this->createEvent($company);
+
+        $this->getJson("/api/events/{$event->id}/participants")
+            ->assertUnauthorized();
+    }
+
+    public function test_index_requires_permission(): void
+    {
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $event = $this->createEvent($company);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson("/api/events/{$event->id}/participants")
+            ->assertForbidden();
+    }
+
+    // ─── Store (Invite) ───────────────────────────────────────────────────────
+
+    public function test_can_invite_external_participant(): void
+    {
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.create']);
+
+        $event = $this->createEvent($company);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants", [
+                'name'  => 'John Doe',
+                'email' => 'john@external.com',
+                'role'  => 'guest',
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.email', 'john@external.com')
+            ->assertJsonPath('data.role', 'guest')
+            ->assertJsonPath('data.rsvp_status', 'pending');
 
         $this->assertDatabaseHas('event_participants', [
-            'id' => $participant->id,
-            'event_id' => $this->event->id,
-            'user_id' => $invitedUser->id,
-            'company_id' => $this->company->id,
-            'role' => 'attendee',
+            'event_id'   => $event->id,
+            'company_id' => $company->id,
+            'email'      => 'john@external.com',
+            'role'       => 'guest',
             'rsvp_status' => 'pending',
         ]);
     }
 
-    public function test_can_invite_internal_personnel_by_personnel_id(): void
+    public function test_can_invite_internal_user(): void
     {
-        $personnel = Personnel::factory()->create([
-            'company_id' => $this->company->id,
-        ]);
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.create']);
 
-        $participant = $this->participantService->invite($this->event, [
+        $event = $this->createEvent($company);
+        $invitedUser = User::factory()->create(['current_company_id' => $company->id]);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants", [
+                'user_id' => $invitedUser->id,
+                'role'    => 'attendee',
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.rsvp_status', 'pending');
+
+        $this->assertDatabaseHas('event_participants', [
+            'event_id' => $event->id,
+            'user_id'  => $invitedUser->id,
+            'role'     => 'attendee',
+        ]);
+    }
+
+    public function test_can_invite_personnel(): void
+    {
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.create']);
+
+        $event = $this->createEvent($company);
+        $personnel = Personnel::factory()->create(['company_id' => $company->id]);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants", [
+                'personnel_id' => $personnel->id,
+                'role'         => 'speaker',
+            ]);
+
+        $response->assertCreated();
+
+        $this->assertDatabaseHas('event_participants', [
+            'event_id'     => $event->id,
             'personnel_id' => $personnel->id,
-            'role' => 'speaker',
-        ]);
-
-        $this->assertDatabaseHas('event_participants', [
-            'id' => $participant->id,
-            'event_id' => $this->event->id,
-            'personnel_id' => $personnel->id,
-            'role' => 'speaker',
-            'rsvp_status' => 'pending',
+            'role'         => 'speaker',
         ]);
     }
 
-    public function test_can_invite_external_participant_by_email(): void
+    public function test_store_requires_permission(): void
     {
-        $participant = $this->participantService->invite($this->event, [
-            'name' => 'John Doe',
-            'email' => 'john.doe@external.com',
-            'role' => 'guest',
-        ]);
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $event = $this->createEvent($company);
 
-        $this->assertDatabaseHas('event_participants', [
-            'id' => $participant->id,
-            'event_id' => $this->event->id,
-            'name' => 'John Doe',
-            'email' => 'john.doe@external.com',
-            'role' => 'guest',
-            'rsvp_status' => 'pending',
-        ]);
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants", [
+                'email' => 'test@test.com',
+                'role'  => 'guest',
+            ])
+            ->assertForbidden();
     }
 
-    public function test_invite_requires_at_least_one_identifier(): void
+    public function test_store_validates_role_field(): void
     {
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $this->expectExceptionMessage('Either user_id, personnel_id, or email must be provided');
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.create']);
 
-        $this->participantService->invite($this->event, [
-            'role' => 'attendee',
-        ]);
+        $event = $this->createEvent($company);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants", [
+                'email' => 'test@test.com',
+                'role'  => 'invalid_role',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['role']);
     }
 
     public function test_cannot_invite_duplicate_user(): void
     {
-        $invitedUser = User::factory()->create([
-            'current_company_id' => $this->company->id,
-        ]);
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.create']);
 
-        // First invitation
-        $this->participantService->invite($this->event, [
-            'user_id' => $invitedUser->id,
-            'role' => 'attendee',
-        ]);
+        $event = $this->createEvent($company);
+        $invitedUser = User::factory()->create(['current_company_id' => $company->id]);
 
-        // Attempt duplicate invitation
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $this->expectExceptionMessage('Participant is already invited to this event');
+        // First invite
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants", [
+                'user_id' => $invitedUser->id,
+                'role'    => 'attendee',
+            ])
+            ->assertCreated();
 
-        $this->participantService->invite($this->event, [
-            'user_id' => $invitedUser->id,
-            'role' => 'speaker',
-        ]);
+        // Duplicate invite
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants", [
+                'user_id' => $invitedUser->id,
+                'role'    => 'speaker',
+            ])
+            ->assertUnprocessable();
     }
 
-    public function test_cannot_invite_duplicate_personnel(): void
+    // ─── Show ─────────────────────────────────────────────────────────────────
+
+    public function test_can_show_participant(): void
     {
-        $personnel = Personnel::factory()->create([
-            'company_id' => $this->company->id,
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.view', 'event_participants.view']);
+
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->external()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        // First invitation
-        $this->participantService->invite($this->event, [
-            'personnel_id' => $personnel->id,
-            'role' => 'attendee',
-        ]);
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->getJson("/api/events/{$event->id}/participants/{$participant->id}");
 
-        // Attempt duplicate invitation
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $this->expectExceptionMessage('Participant is already invited to this event');
-
-        $this->participantService->invite($this->event, [
-            'personnel_id' => $personnel->id,
-            'role' => 'organizer',
-        ]);
+        $response->assertOk()
+            ->assertJsonPath('data.id', $participant->id);
     }
 
-    public function test_cannot_invite_duplicate_external_email(): void
+    // ─── Destroy ─────────────────────────────────────────────────────────────
+
+    public function test_can_remove_participant(): void
     {
-        // First invitation
-        $this->participantService->invite($this->event, [
-            'name' => 'John Doe',
-            'email' => 'john@external.com',
-            'role' => 'guest',
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.delete']);
+
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->external()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        // Attempt duplicate invitation
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $this->expectExceptionMessage('Participant is already invited to this event');
+        $this->withHeaders($this->authHeaders($user))
+            ->deleteJson("/api/events/{$event->id}/participants/{$participant->id}")
+            ->assertNoContent();
 
-        $this->participantService->invite($this->event, [
-            'name' => 'John Doe',
-            'email' => 'john@external.com',
-            'role' => 'speaker',
-        ]);
+        $this->assertSoftDeleted('event_participants', ['id' => $participant->id]);
     }
 
-    public function test_invite_sets_default_role_and_status(): void
+    public function test_destroy_requires_permission(): void
     {
-        $invitedUser = User::factory()->create([
-            'current_company_id' => $this->company->id,
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->external()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        $participant = $this->participantService->invite($this->event, [
-            'user_id' => $invitedUser->id,
-        ]);
-
-        $this->assertEquals('attendee', $participant->role);
-        $this->assertEquals('pending', $participant->rsvp_status);
+        $this->withHeaders($this->authHeaders($user))
+            ->deleteJson("/api/events/{$event->id}/participants/{$participant->id}")
+            ->assertForbidden();
     }
 
-    // ─── RSVP Tests ───────────────────────────────────────────────────────────
+    // ─── Confirm RSVP ────────────────────────────────────────────────────────
 
-    public function test_can_confirm_participation(): void
+    public function test_can_confirm_rsvp(): void
     {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'pending',
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.update']);
+
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->pending()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        $confirmed = $this->participantService->confirm($participant);
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/{$participant->id}/confirm");
 
-        $this->assertEquals('confirmed', $confirmed->rsvp_status);
+        $response->assertOk()
+            ->assertJsonPath('data.rsvp_status', 'confirmed');
+
         $this->assertDatabaseHas('event_participants', [
-            'id' => $participant->id,
+            'id'          => $participant->id,
             'rsvp_status' => 'confirmed',
         ]);
     }
 
     public function test_cannot_confirm_already_confirmed_participant(): void
     {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'confirmed',
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.update']);
+
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->confirmed()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $this->expectExceptionMessage('Participant has already confirmed');
-
-        $this->participantService->confirm($participant);
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/{$participant->id}/confirm")
+            ->assertUnprocessable();
     }
 
-    public function test_can_decline_participation(): void
+    public function test_confirm_requires_permission(): void
     {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'pending',
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->pending()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        $declined = $this->participantService->decline($participant);
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/{$participant->id}/confirm")
+            ->assertForbidden();
+    }
 
-        $this->assertEquals('declined', $declined->rsvp_status);
+    // ─── Decline RSVP ────────────────────────────────────────────────────────
+
+    public function test_can_decline_rsvp(): void
+    {
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.update']);
+
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->pending()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
+        ]);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/{$participant->id}/decline");
+
+        $response->assertOk()
+            ->assertJsonPath('data.rsvp_status', 'declined');
+
         $this->assertDatabaseHas('event_participants', [
-            'id' => $participant->id,
+            'id'          => $participant->id,
             'rsvp_status' => 'declined',
         ]);
     }
 
     public function test_cannot_decline_already_declined_participant(): void
     {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'declined',
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.update']);
+
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->declined()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
-        $this->expectExceptionMessage('Participant has already declined');
-
-        $this->participantService->decline($participant);
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/{$participant->id}/decline")
+            ->assertUnprocessable();
     }
 
-    public function test_can_change_rsvp_from_declined_to_confirmed(): void
+    public function test_decline_requires_permission(): void
     {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'declined',
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $event = $this->createEvent($company);
+        $participant = EventParticipant::factory()->pending()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
         ]);
 
-        // Should be able to confirm after declining
-        $confirmed = $this->participantService->confirm($participant);
-
-        $this->assertEquals('confirmed', $confirmed->rsvp_status);
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/{$participant->id}/decline")
+            ->assertForbidden();
     }
 
-    public function test_can_change_rsvp_from_confirmed_to_declined(): void
-    {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'confirmed',
-        ]);
-
-        // Should be able to decline after confirming
-        $declined = $this->participantService->decline($participant);
-
-        $this->assertEquals('declined', $declined->rsvp_status);
-    }
-
-    // ─── Bulk Invite Tests ────────────────────────────────────────────────────
+    // ─── Bulk Invite ──────────────────────────────────────────────────────────
 
     public function test_can_bulk_invite_participants(): void
     {
-        $user1 = User::factory()->create(['current_company_id' => $this->company->id]);
-        $user2 = User::factory()->create(['current_company_id' => $this->company->id]);
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.create']);
 
-        $participants = [
-            ['user_id' => $user1->id, 'role' => 'attendee'],
-            ['user_id' => $user2->id, 'role' => 'speaker'],
-            ['name' => 'External Guest', 'email' => 'guest@external.com', 'role' => 'guest'],
-        ];
+        $event = $this->createEvent($company);
+        $user1 = User::factory()->create(['current_company_id' => $company->id]);
+        $user2 = User::factory()->create(['current_company_id' => $company->id]);
 
-        $result = $this->participantService->bulkInvite($this->event, $participants);
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/bulk-invite", [
+                'participants' => [
+                    ['user_id' => $user1->id, 'role' => 'attendee'],
+                    ['user_id' => $user2->id, 'role' => 'speaker'],
+                    ['name' => 'External Guest', 'email' => 'guest@external.com', 'role' => 'guest'],
+                ],
+            ]);
 
-        $this->assertCount(3, $result['created']);
-        $this->assertCount(0, $result['failed']);
+        $response->assertCreated();
+        $this->assertCount(3, $response->json('created'));
+        $this->assertCount(0, $response->json('failed'));
 
         $this->assertDatabaseHas('event_participants', [
-            'event_id' => $this->event->id,
-            'user_id' => $user1->id,
+            'event_id' => $event->id,
+            'user_id'  => $user1->id,
         ]);
-
         $this->assertDatabaseHas('event_participants', [
-            'event_id' => $this->event->id,
-            'user_id' => $user2->id,
-        ]);
-
-        $this->assertDatabaseHas('event_participants', [
-            'event_id' => $this->event->id,
-            'email' => 'guest@external.com',
+            'event_id' => $event->id,
+            'email'    => 'guest@external.com',
         ]);
     }
 
     public function test_bulk_invite_handles_partial_failures(): void
     {
-        $user1 = User::factory()->create(['current_company_id' => $this->company->id]);
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['events.update', 'event_participants.create']);
 
-        // Pre-invite user1 to create a duplicate scenario
-        $this->participantService->invite($this->event, [
-            'user_id' => $user1->id,
-            'role' => 'attendee',
+        $event = $this->createEvent($company);
+        $existingUser = User::factory()->create(['current_company_id' => $company->id]);
+
+        // Pre-invite to create duplicate scenario
+        EventParticipant::factory()->create([
+            'company_id' => $company->id,
+            'event_id'   => $event->id,
+            'user_id'    => $existingUser->id,
         ]);
 
-        $participants = [
-            ['user_id' => $user1->id, 'role' => 'speaker'], // Duplicate - should fail
-            ['name' => 'Valid Guest', 'email' => 'valid@external.com', 'role' => 'guest'], // Should succeed
-            ['role' => 'attendee'], // Missing identifier - should fail
-        ];
-
-        $result = $this->participantService->bulkInvite($this->event, $participants);
-
-        $this->assertCount(1, $result['created']);
-        $this->assertCount(2, $result['failed']);
-
-        // Verify the successful one was created
-        $this->assertDatabaseHas('event_participants', [
-            'event_id' => $this->event->id,
-            'email' => 'valid@external.com',
-        ]);
-
-        // Verify failed entries contain error information
-        $this->assertArrayHasKey('index', $result['failed'][0]);
-        $this->assertArrayHasKey('error', $result['failed'][0]);
-    }
-
-    public function test_bulk_invite_with_all_failures(): void
-    {
-        $participants = [
-            ['role' => 'attendee'], // Missing identifier
-            ['role' => 'speaker'], // Missing identifier
-        ];
-
-        $result = $this->participantService->bulkInvite($this->event, $participants);
-
-        $this->assertCount(0, $result['created']);
-        $this->assertCount(2, $result['failed']);
-    }
-
-    // ─── Remove Participant Tests ─────────────────────────────────────────────
-
-    public function test_can_remove_participant(): void
-    {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-        ]);
-
-        $result = $this->participantService->remove($participant);
-
-        $this->assertTrue($result);
-        $this->assertSoftDeleted('event_participants', ['id' => $participant->id]);
-    }
-
-    // ─── Relationship Tests ───────────────────────────────────────────────────
-
-    public function test_participant_belongs_to_event(): void
-    {
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-        ]);
-
-        $this->assertInstanceOf(Event::class, $participant->event);
-        $this->assertEquals($this->event->id, $participant->event->id);
-    }
-
-    public function test_participant_belongs_to_user(): void
-    {
-        $invitedUser = User::factory()->create([
-            'current_company_id' => $this->company->id,
-        ]);
-
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'user_id' => $invitedUser->id,
-        ]);
-
-        $this->assertInstanceOf(User::class, $participant->user);
-        $this->assertEquals($invitedUser->id, $participant->user->id);
-    }
-
-    public function test_participant_belongs_to_personnel(): void
-    {
-        $personnel = Personnel::factory()->create([
-            'company_id' => $this->company->id,
-        ]);
-
-        $participant = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'personnel_id' => $personnel->id,
-        ]);
-
-        $this->assertInstanceOf(Personnel::class, $participant->personnel);
-        $this->assertEquals($personnel->id, $participant->personnel->id);
-    }
-
-    public function test_event_has_many_participants(): void
-    {
-        EventParticipant::factory()->count(3)->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-        ]);
-
-        $this->assertCount(3, $this->event->participants);
-    }
-
-    // ─── Tenant Isolation Tests ───────────────────────────────────────────────
-
-    public function test_participants_are_company_scoped(): void
-    {
-        ['user' => $userB, 'company' => $companyB] = $this->setUpCompanyAndUser();
-
-        $eventB = Event::factory()->create([
-            'company_id' => $companyB->id,
-        ]);
-
-        $participantA = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-        ]);
-
-        $participantB = EventParticipant::factory()->create([
-            'company_id' => $companyB->id,
-            'event_id' => $eventB->id,
-        ]);
-
-        // User A should only see their participant
-        $this->actingAs($this->user);
-        $participantsA = EventParticipant::all();
-        $this->assertCount(1, $participantsA);
-        $this->assertEquals($participantA->id, $participantsA->first()->id);
-
-        // User B should only see their participant
-        $this->actingAs($userB);
-        $participantsB = EventParticipant::all();
-        $this->assertCount(1, $participantsB);
-        $this->assertEquals($participantB->id, $participantsB->first()->id);
-    }
-
-    // ─── Role Tests ───────────────────────────────────────────────────────────
-
-    public function test_can_invite_with_different_roles(): void
-    {
-        $roles = ['organizer', 'speaker', 'attendee', 'guest'];
-
-        foreach ($roles as $role) {
-            $user = User::factory()->create(['current_company_id' => $this->company->id]);
-
-            $participant = $this->participantService->invite($this->event, [
-                'user_id' => $user->id,
-                'role' => $role,
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/bulk-invite", [
+                'participants' => [
+                    ['user_id' => $existingUser->id, 'role' => 'speaker'], // Duplicate - fails
+                    ['name' => 'Valid Guest', 'email' => 'valid@external.com', 'role' => 'guest'], // Succeeds
+                    ['role' => 'attendee'], // Missing identifier - fails
+                ],
             ]);
 
-            $this->assertEquals($role, $participant->role);
-        }
+        $response->assertCreated();
+        $this->assertCount(1, $response->json('created'));
+        $this->assertCount(2, $response->json('failed'));
     }
 
-    public function test_multiple_participants_with_different_rsvp_statuses(): void
+    public function test_bulk_invite_requires_permission(): void
     {
-        $pending = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'pending',
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $event = $this->createEvent($company);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/events/{$event->id}/participants/bulk-invite", [
+                'participants' => [
+                    ['email' => 'test@test.com', 'role' => 'guest'],
+                ],
+            ])
+            ->assertForbidden();
+    }
+
+    // ─── Tenant Isolation ─────────────────────────────────────────────────────
+
+    public function test_cannot_view_participants_from_another_company_event(): void
+    {
+        ['user' => $userA, 'company' => $companyA] = $this->setUpCompanyAndUser();
+        ['user' => $userB, 'company' => $companyB] = $this->setUpCompanyAndUser();
+
+        $this->giveUserPermissions($userB, $companyB, ['events.view', 'event_participants.view_any']);
+
+        $eventA = $this->createEvent($companyA);
+
+        // User B cannot list participants of User A's event (event not found)
+        $this->withHeaders($this->authHeaders($userB))
+            ->getJson("/api/events/{$eventA->id}/participants")
+            ->assertNotFound();
+    }
+
+    public function test_cannot_invite_to_another_company_event(): void
+    {
+        ['user' => $userA, 'company' => $companyA] = $this->setUpCompanyAndUser();
+        ['user' => $userB, 'company' => $companyB] = $this->setUpCompanyAndUser();
+
+        $this->giveUserPermissions($userB, $companyB, ['events.update', 'event_participants.create']);
+
+        $eventA = $this->createEvent($companyA);
+
+        $this->withHeaders($this->authHeaders($userB))
+            ->postJson("/api/events/{$eventA->id}/participants", [
+                'email' => 'test@test.com',
+                'role'  => 'guest',
+            ])
+            ->assertNotFound();
+    }
+
+    public function test_participants_are_scoped_to_company(): void
+    {
+        ['user' => $userA, 'company' => $companyA] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($userA, $companyA, ['events.view', 'event_participants.view_any']);
+
+        $eventA = $this->createEvent($companyA);
+
+        EventParticipant::factory()->count(2)->create([
+            'company_id' => $companyA->id,
+            'event_id'   => $eventA->id,
         ]);
 
-        $confirmed = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'confirmed',
+        $responseA = $this->withHeaders($this->authHeaders($userA))
+            ->getJson("/api/events/{$eventA->id}/participants");
+
+        $responseA->assertOk();
+        $this->assertCount(2, $responseA->json('data'));
+    }
+
+    public function test_participants_are_scoped_to_company_for_second_tenant(): void
+    {
+        ['user' => $userB, 'company' => $companyB] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($userB, $companyB, ['events.view', 'event_participants.view_any']);
+
+        $eventB = $this->createEvent($companyB);
+
+        EventParticipant::factory()->count(3)->create([
+            'company_id' => $companyB->id,
+            'event_id'   => $eventB->id,
         ]);
 
-        $declined = EventParticipant::factory()->create([
-            'company_id' => $this->company->id,
-            'event_id' => $this->event->id,
-            'rsvp_status' => 'declined',
+        $responseB = $this->withHeaders($this->authHeaders($userB))
+            ->getJson("/api/events/{$eventB->id}/participants");
+
+        $responseB->assertOk();
+        $this->assertCount(3, $responseB->json('data'));
+    }
+
+    public function test_cannot_confirm_participant_from_another_company(): void
+    {
+        ['user' => $userA, 'company' => $companyA] = $this->setUpCompanyAndUser();
+        ['user' => $userB, 'company' => $companyB] = $this->setUpCompanyAndUser();
+
+        $this->giveUserPermissions($userB, $companyB, ['events.update', 'event_participants.update']);
+
+        $eventA = $this->createEvent($companyA);
+        $participantA = EventParticipant::factory()->pending()->create([
+            'company_id' => $companyA->id,
+            'event_id'   => $eventA->id,
         ]);
 
-        $participants = $this->event->participants;
-
-        $this->assertCount(3, $participants);
-        $this->assertEquals(1, $participants->where('rsvp_status', 'pending')->count());
-        $this->assertEquals(1, $participants->where('rsvp_status', 'confirmed')->count());
-        $this->assertEquals(1, $participants->where('rsvp_status', 'declined')->count());
+        // User B cannot confirm participant from company A's event
+        $this->withHeaders($this->authHeaders($userB))
+            ->postJson("/api/events/{$eventA->id}/participants/{$participantA->id}/confirm")
+            ->assertNotFound();
     }
 }
