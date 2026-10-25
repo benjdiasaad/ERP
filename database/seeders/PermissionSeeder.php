@@ -44,6 +44,7 @@ class PermissionSeeder extends Seeder
         'payments'          => ['confirm', 'cancel'],
         'cautions'          => ['activate', 'partial_return', 'full_return', 'extend', 'forfeit', 'cancel'],
         'events'            => ['confirm', 'cancel', 'complete', 'postpone'],
+        'contacts'          => ['merge'],
         'leads'             => ['qualify', 'convert', 'assign'],
         'opportunities'     => ['advance', 'win', 'lose'],
         'activities'        => ['complete'],

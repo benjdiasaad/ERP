@@ -286,16 +286,16 @@ class QuoteCalculationTest extends TestCase
         $quote->lines()->create([
             'company_id' => $company->id,
             'description' => 'Line 2',
-            'quantity' =>  => 1,
+            'quantity' => 1,
             'unit_price_ht' => 200.00,
             'discount_type' => 'percentage',
             'discount_value' => 10,
             'subtotal_ht' => 200.00,
             'discount_amount' => 20.00,
             'subtotal_ht_after_discount' => 180.00,
-            'tax_rate' =>  => 20,
+            'tax_rate' => 20,
             'tax_amount' => 36.00,
-            'total_ttc' => => 216.00,
+            'total_ttc' => 216.00,
             'sort_order' => 1,
         ]);
 
@@ -348,7 +348,7 @@ class QuoteCalculationTest extends TestCase
         $quote->lines()->create([
             'company_id' => $company->id,
             'description' => 'Simple line',
-            'quantity' =>  => 3,
+            'quantity' => 3,
             'unit_price_ht' => 100.00,
             'discount_type' => null,
             'discount_value' => 0,
@@ -357,7 +357,7 @@ class QuoteCalculationTest extends TestCase
             'subtotal_ht_after_discount' => 300.00,
             'tax_rate' => 0,
             'tax_amount' => 0.00,
-            'total_ttc' => => 300.00,
+            'total_ttc' => 300.00,
             'sort_order' => 0,
         ]);
 

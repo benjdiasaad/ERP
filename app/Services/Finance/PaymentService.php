@@ -155,14 +155,14 @@ class PaymentService
                     'chart_of_account_id' => $bankAccountId,
                     'debit'               => $amount,
                     'credit'              => 0,
-                    'description'         => "Payment received from {$payment->payable->customer->name ?? 'Customer'} - {$payment->reference}",
+                    'description'         => "Payment received from " . ($payment->payable?->customer?->name ?? 'Customer') . " - {$payment->reference}",
                     'sort_order'          => 0,
                 ],
                 [
                     'chart_of_account_id' => $counterpartyAccountId,
                     'debit'               => 0,
                     'credit'              => $amount,
-                    'description'         => "Accounts receivable - {$payment->payable->reference ?? 'Invoice'}",
+                    'description'         => "Accounts receivable - " . ($payment->payable?->reference ?? 'Invoice'),
                     'sort_order'          => 1,
                 ],
             ];
@@ -173,14 +173,14 @@ class PaymentService
                     'chart_of_account_id' => $counterpartyAccountId,
                     'debit'               => $amount,
                     'credit'              => 0,
-                    'description'         => "Accounts payable - {$payment->payable->reference ?? 'Invoice'}",
+                    'description'         => "Accounts payable - " . ($payment->payable?->reference ?? 'Invoice'),
                     'sort_order'          => 0,
                 ],
                 [
                     'chart_of_account_id' => $bankAccountId,
                     'debit'               => 0,
                     'credit'              => $amount,
-                    'description'         => "Payment to {$payment->payable->supplier->name ?? 'Supplier'} - {$payment->reference}",
+                    'description'         => "Payment to " . ($payment->payable?->supplier?->name ?? 'Supplier') . " - {$payment->reference}",
                     'sort_order'          => 1,
                 ],
             ];
