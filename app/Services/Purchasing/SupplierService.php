@@ -23,14 +23,13 @@ class SupplierService
 
         if (!empty($filters['search'])) {
             $term = mb_strtolower($filters['search']);
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where(function ($q) use ($term, $like) {
-                $q->where('name', $like, "%{$term}%")
-                  ->orWhere('code', $like, "%{$term}%")
-                  ->orWhere('email', $like, "%{$term}%")
-                  ->orWhere('phone', $like, "%{$term}%")
-                  ->orWhere('tax_id', $like, "%{$term}%")
-                  ->orWhere('ice', $like, "%{$term}%");
+            $query->where(function ($q) use ($term) {
+                $q->whereLike('name', "%{$term}%")
+                  ->orWhereLike('code', "%{$term}%")
+                  ->orWhereLike('email', "%{$term}%")
+                  ->orWhereLike('phone', "%{$term}%")
+                  ->orWhereLike('tax_id', "%{$term}%")
+                  ->orWhereLike('ice', "%{$term}%");
             });
         }
 
@@ -82,16 +81,15 @@ class SupplierService
      */
     public function search(string $term): Collection
     {
-        $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
 
         return Supplier::query()
-            ->where(function ($q) use ($term, $like) {
-                $q->where('name', $like, "%{$term}%")
-                  ->orWhere('code', $like, "%{$term}%")
-                  ->orWhere('email', $like, "%{$term}%")
-                  ->orWhere('phone', $like, "%{$term}%")
-                  ->orWhere('tax_id', $like, "%{$term}%")
-                  ->orWhere('ice', $like, "%{$term}%");
+            ->where(function ($q) use ($term) {
+                $q->whereLike('name', "%{$term}%")
+                  ->orWhereLike('code', "%{$term}%")
+                  ->orWhereLike('email', "%{$term}%")
+                  ->orWhereLike('phone', "%{$term}%")
+                  ->orWhereLike('tax_id', "%{$term}%")
+                  ->orWhereLike('ice', "%{$term}%");
             })
             ->orderBy('name')
             ->get();

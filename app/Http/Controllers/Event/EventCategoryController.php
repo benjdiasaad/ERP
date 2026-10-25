@@ -26,7 +26,7 @@ class EventCategoryController extends Controller
 
         $categories = EventCategory::query()
             ->when($request->input('search'), function ($query, $search) {
-                $query->where('name', 'ilike', "%{$search}%");
+                $query->whereLike('name', "%{$search}%");
             })
             ->orderBy('name')
             ->paginate($request->input('per_page', 15));

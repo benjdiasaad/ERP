@@ -22,10 +22,9 @@ class CautionTypeService
 
         if (!empty($filters['search'])) {
             $term = mb_strtolower($filters['search']);
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where(function ($q) use ($term, $like) {
-                $q->where('name', $like, "%{$term}%")
-                  ->orWhere('description', $like, "%{$term}%");
+            $query->where(function ($q) use ($term) {
+                $q->whereLike('name', "%{$term}%")
+                  ->orWhereLike('description', "%{$term}%");
             });
         }
 
@@ -69,12 +68,11 @@ class CautionTypeService
      */
     public function search(string $term): Collection
     {
-        $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
 
         return CautionType::query()
-            ->where(function ($q) use ($term, $like) {
-                $q->where('name', $like, "%{$term}%")
-                  ->orWhere('description', $like, "%{$term}%");
+            ->where(function ($q) use ($term) {
+                $q->whereLike('name', "%{$term}%")
+                  ->orWhereLike('description', "%{$term}%");
             })
             ->orderBy('name')
             ->get();

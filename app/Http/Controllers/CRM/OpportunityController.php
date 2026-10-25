@@ -30,10 +30,10 @@ class OpportunityController extends Controller
         $opportunities = Opportunity::query()
             ->with(['contact', 'customer', 'assignee'])
             ->when($request->input('search'), function ($query, $search) {
-                $like = '%' . mb_strtolower($search) . '%';
+                $like = '%' . $search . '%';
                 $query->where(function ($query) use ($like) {
-                    $query->whereRaw('LOWER(title) LIKE ?', [$like])
-                        ->orWhereRaw('LOWER(reference) LIKE ?', [$like]);
+                    $query->whereLike('title', $like)
+                        ->orWhereLike('reference', $like);
                 });
             })
             ->when($request->input('stage'), fn ($query, $stage) => $query->where('stage', $stage))

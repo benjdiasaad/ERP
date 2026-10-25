@@ -58,14 +58,13 @@ class CustomerService
 
         if (!empty($filters['search'])) {
             $term  = mb_strtolower($filters['search']);
-            $like  = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where(function ($q) use ($term, $like) {
-                $q->where('name', $like, "%{$term}%")
-                  ->orWhere('first_name', $like, "%{$term}%")
-                  ->orWhere('last_name', $like, "%{$term}%")
-                  ->orWhere('email', $like, "%{$term}%")
-                  ->orWhere('phone', $like, "%{$term}%")
-                  ->orWhere('code', $like, "%{$term}%");
+            $query->where(function ($q) use ($term) {
+                $q->whereLike('name', "%{$term}%")
+                  ->orWhereLike('first_name', "%{$term}%")
+                  ->orWhereLike('last_name', "%{$term}%")
+                  ->orWhereLike('email', "%{$term}%")
+                  ->orWhereLike('phone', "%{$term}%")
+                  ->orWhereLike('code', "%{$term}%");
             });
         }
 
@@ -74,8 +73,7 @@ class CustomerService
         }
 
         if (!empty($filters['city'])) {
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where('city', $like, "%{$filters['city']}%");
+            $query->whereLike('city', "%{$filters['city']}%");
         }
 
         if (isset($filters['is_active'])) {

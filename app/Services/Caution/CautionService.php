@@ -24,10 +24,9 @@ class CautionService
 
         if (!empty($filters['search'])) {
             $term = mb_strtolower($filters['search']);
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where(function ($q) use ($term, $like) {
-                $q->where('notes', $like, "%{$term}%")
-                  ->orWhereHas('partner', fn($subQ) => $subQ->where('name', $like, "%{$term}%"));
+            $query->where(function ($q) use ($term) {
+                $q->whereLike('notes', "%{$term}%")
+                  ->orWhereHas('partner', fn($subQ) => $subQ->whereLike('name', "%{$term}%"));
             });
         }
 

@@ -96,9 +96,9 @@ class PersonnelService
         if (!empty($filters['name'])) {
             $name = $filters['name'];
             $query->where(function ($q) use ($name) {
-                $q->where('first_name', 'ilike', "%{$name}%")
-                  ->orWhere('last_name', 'ilike', "%{$name}%")
-                  ->orWhere('matricule', 'ilike', "%{$name}%");
+                $q->whereLike('first_name', "%{$name}%")
+                  ->orWhereLike('last_name', "%{$name}%")
+                  ->orWhereLike('matricule', "%{$name}%");
             });
         }
 

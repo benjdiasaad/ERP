@@ -27,7 +27,7 @@ class ActivityController extends Controller
         $activities = Activity::query()
             ->with(['assignee'])
             ->when($request->input('search'), function ($query, $search) {
-                $query->whereRaw('LOWER(subject) LIKE ?', ['%' . mb_strtolower($search) . '%']);
+                $query->whereLike('subject', '%' . $search . '%');
             })
             ->when($request->input('type'), fn ($query, $type) => $query->where('type', $type))
             ->when($request->input('status'), fn ($query, $status) => $query->where('status', $status))

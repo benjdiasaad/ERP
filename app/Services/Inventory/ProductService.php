@@ -42,12 +42,11 @@ class ProductService
 
         if (!empty($filters['search'])) {
             $term = mb_strtolower($filters['search']);
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where(function ($q) use ($term, $like) {
-                $q->where('name', $like, "%{$term}%")
-                  ->orWhere('code', $like, "%{$term}%")
-                  ->orWhere('barcode', $like, "%{$term}%")
-                  ->orWhere('description', $like, "%{$term}%");
+            $query->where(function ($q) use ($term) {
+                $q->whereLike('name', "%{$term}%")
+                  ->orWhereLike('code', "%{$term}%")
+                  ->orWhereLike('barcode', "%{$term}%")
+                  ->orWhereLike('description', "%{$term}%");
             });
         }
 

@@ -25,11 +25,18 @@ return new class extends Migration
             $table->index('parent_id');
         });
 
-        // Partial unique index: (company_id, code) where code is not null
-        // Using raw statement for PostgreSQL compatibility
-        \Illuminate\Support\Facades\DB::statement(
-            'CREATE UNIQUE INDEX product_categories_company_code_unique ON product_categories (company_id, code) WHERE code IS NOT NULL'
-        );
+        // Unique (company_id, code) where code is not null. PostgreSQL and SQLite
+        // support partial indexes; MySQL does not, but its unique indexes already
+        // allow multiple NULLs, so a plain unique index is equivalent there.
+        if (in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb'], true)) {
+            Schema::table('product_categories', function (Blueprint $table) {
+                $table->unique(['company_id', 'code'], 'product_categories_company_code_unique');
+            });
+        } else {
+            \Illuminate\Support\Facades\DB::statement(
+                'CREATE UNIQUE INDEX product_categories_company_code_unique ON product_categories (company_id, code) WHERE code IS NOT NULL'
+            );
+        }
     }
 
     public function down(): void

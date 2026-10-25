@@ -28,12 +28,12 @@ class ContactController extends Controller
         $contacts = Contact::query()
             ->with(['customer', 'supplier'])
             ->when($request->input('search'), function ($query, $search) {
-                $like = '%' . mb_strtolower($search) . '%';
+                $like = '%' . $search . '%';
                 $query->where(function ($query) use ($like) {
-                    $query->whereRaw('LOWER(first_name) LIKE ?', [$like])
-                        ->orWhereRaw('LOWER(last_name) LIKE ?', [$like])
-                        ->orWhereRaw('LOWER(email) LIKE ?', [$like])
-                        ->orWhereRaw('LOWER(organization) LIKE ?', [$like]);
+                    $query->whereLike('first_name', $like)
+                        ->orWhereLike('last_name', $like)
+                        ->orWhereLike('email', $like)
+                        ->orWhereLike('organization', $like);
                 });
             })
             ->when($request->input('customer_id'), fn ($query, $id) => $query->where('customer_id', $id))

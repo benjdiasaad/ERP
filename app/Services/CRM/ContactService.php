@@ -48,12 +48,12 @@ class ContactService
      */
     public function search(string $term, int $limit = 20): Collection
     {
-        $like = '%' . mb_strtolower($term) . '%';
+        $like = '%' . $term . '%';
 
         return Contact::query()
             ->where(function ($query) use ($like) {
                 foreach (['first_name', 'last_name', 'email', 'phone', 'mobile', 'organization'] as $column) {
-                    $query->orWhereRaw("LOWER({$column}) LIKE ?", [$like]);
+                    $query->orWhereLike($column, $like);
                 }
             })
             ->orderBy('last_name')

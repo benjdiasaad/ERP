@@ -30,10 +30,10 @@ class LeadController extends Controller
         $leads = Lead::query()
             ->with(['contact', 'assignee'])
             ->when($request->input('search'), function ($query, $search) {
-                $like = '%' . mb_strtolower($search) . '%';
+                $like = '%' . $search . '%';
                 $query->where(function ($query) use ($like) {
-                    $query->whereRaw('LOWER(title) LIKE ?', [$like])
-                        ->orWhereRaw('LOWER(reference) LIKE ?', [$like]);
+                    $query->whereLike('title', $like)
+                        ->orWhereLike('reference', $like);
                 });
             })
             ->when($request->input('status'), fn ($query, $status) => $query->where('status', $status))

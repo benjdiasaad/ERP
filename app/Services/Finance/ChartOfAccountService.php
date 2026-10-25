@@ -86,10 +86,9 @@ class ChartOfAccountService
 
         if (!empty($filters['search'])) {
             $term = mb_strtolower($filters['search']);
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where(function ($q) use ($term, $like) {
-                $q->where('code', $like, "%{$term}%")
-                  ->orWhere('name', $like, "%{$term}%");
+            $query->where(function ($q) use ($term) {
+                $q->whereLike('code', "%{$term}%")
+                  ->orWhereLike('name', "%{$term}%");
             });
         }
 

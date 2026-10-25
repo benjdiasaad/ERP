@@ -27,7 +27,7 @@ class EventController extends Controller
         $events = Event::query()
             ->with(['category', 'participants'])
             ->when($request->input('search'), function ($query, $search) {
-                $query->where('title', 'ilike', "%{$search}%");
+                $query->whereLike('title', "%{$search}%");
             })
             ->when($request->input('status'), function ($query, $status) {
                 $query->where('status', $status);
