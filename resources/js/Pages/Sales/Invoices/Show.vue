@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import ReasonDialog from '@/components/ReasonDialog.vue';
 import DocumentLinesTable from '@/components/sales/DocumentLinesTable.vue';
-import PaymentDialog from './Partials/PaymentDialog.vue';
+import PaymentDialog from '@/components/sales/PaymentDialog.vue';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
     AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -41,7 +41,7 @@ const destroy = () => router.delete(route('sales.invoices.destroy', i.value.id))
         <PageHeader :title="i.reference" :description="`${i.customer?.name ?? ''} · ${formatDate(i.invoice_date)}`">
             <template #actions>
                 <Button v-if="status === 'draft' && can('invoices.send')" :disabled="processing" @click="send"><Send /> Marquer envoyée</Button>
-                <PaymentDialog v-if="payable && can('invoices.record_payment')" :invoice="i" />
+                <PaymentDialog v-if="payable && can('invoices.record_payment')" :invoice="i" :url="route('sales.invoices.record-payment', i.id)" />
                 <ReasonDialog v-if="['sent', 'partial', 'paid', 'overdue'].includes(status) && can('invoices.create_credit_note')"
                     :url="route('sales.invoices.create-credit-note', i.id)" title="Créer un avoir"
                     description="Un avoir en brouillon reprenant toutes les lignes de la facture sera créé."

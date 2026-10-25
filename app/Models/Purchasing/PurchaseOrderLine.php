@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Purchasing;
 
+use App\Models\Inventory\Product;
 use App\Traits\BelongsToCompany;
 use Database\Factories\Purchasing\PurchaseOrderLineFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -77,5 +78,10 @@ class PurchaseOrderLine extends Model
     public function remainingToInvoice(): string
     {
         return bcsub((string) $this->quantity, (string) $this->invoiced_quantity, 4);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 }

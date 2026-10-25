@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -21,6 +22,16 @@ class Supplier extends Model
     protected static function newFactory(): Factory
     {
         return SupplierFactory::new();
+    }
+
+    protected static function booted(): void
+    {
+        // An empty credit limit means "no limit", stored as 0 (the column is NOT NULL).
+        static::saving(function (self $supplier): void {
+            if ($supplier->credit_limit === null) {
+                $supplier->credit_limit = 0;
+            }
+        });
     }
 
     protected $fillable = [
@@ -83,5 +94,15 @@ class Supplier extends Model
               ->orWhere('tax_id', 'like', "%{$term}%")
               ->orWhere('ice', 'like', "%{$term}%");
         });
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function purchaseInvoices(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoice::class);
     }
 }

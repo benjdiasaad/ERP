@@ -145,11 +145,14 @@ class PurchaseOrderController extends Controller
         $this->authorize('generateInvoice', $purchaseOrder);
 
         try {
-            $result = $this->purchaseOrderService->generatePurchaseInvoice($purchaseOrder);
+            $invoice = $this->purchaseOrderService->generatePurchaseInvoice($purchaseOrder);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
 
-        return response()->json($result, 201);
+        return response()->json([
+            'message' => 'Purchase invoice generated.',
+            'invoice' => $invoice->load('lines'),
+        ], 201);
     }
 }

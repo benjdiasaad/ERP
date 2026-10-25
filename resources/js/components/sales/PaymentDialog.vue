@@ -9,8 +9,10 @@ import {
 import { useAction } from '@/composables/useAction';
 import { formatMoney, labels } from '@/composables/format';
 
+/** Record a (partial) payment on a customer or supplier invoice. */
 const props = defineProps({
     invoice: { type: Object, required: true },
+    url: { type: String, required: true },
 });
 
 const open = ref(false);
@@ -28,7 +30,7 @@ watch(open, (isOpen) => {
 });
 
 const { run, processing, errors } = useAction();
-const submit = () => run(route('sales.invoices.record-payment', props.invoice.id), form, {
+const submit = () => run(props.url, form, {
     fields: ['amount', 'payment_date', 'payment_method', 'reference'],
     onSuccess: () => (open.value = false),
 });

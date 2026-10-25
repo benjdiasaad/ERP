@@ -37,7 +37,7 @@ const pickProduct = (line, productId) => {
     const product = productsById.value[productId];
     if (!product) return;
     line.description = product.name;
-    line.unit_price_ht = product.sale_price;
+    line.unit_price_ht = product.price;
     line.tax_rate = product.tax_rate;
 };
 

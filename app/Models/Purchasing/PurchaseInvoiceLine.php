@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Purchasing;
 
+use App\Models\Inventory\Product;
 use App\Traits\BelongsToCompany;
 use Database\Factories\Purchasing\PurchaseInvoiceLineFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -58,5 +59,10 @@ class PurchaseInvoiceLine extends Model
     public function purchaseInvoice(): BelongsTo
     {
         return $this->belongsTo(PurchaseInvoice::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 }

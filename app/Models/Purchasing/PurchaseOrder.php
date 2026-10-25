@@ -125,4 +125,9 @@ class PurchaseOrder extends Model
     {
         return $query->where('status', $status);
     }
+
+    public function purchaseInvoices(): HasMany
+    {
+        return $this->hasMany(PurchaseInvoice::class);
+    }
 }

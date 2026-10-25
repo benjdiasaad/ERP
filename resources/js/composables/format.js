@@ -43,7 +43,15 @@ export const labels = {
     activityStatus: {
         pending: 'À faire', in_progress: 'En cours', completed: 'Terminée', cancelled: 'Annulée',
     },
-    priority: { low: 'Basse', medium: 'Moyenne', high: 'Haute' },
+    priority: { low: 'Basse', medium: 'Moyenne', high: 'Haute', urgent: 'Urgente' },
+    purchaseRequestStatus: {
+        draft: 'Brouillon', submitted: 'En attente', approved: 'Approuvée', rejected: 'Rejetée', converted: 'Commandée', cancelled: 'Annulée',
+    },
+    purchaseOrderStatus: {
+        draft: 'Brouillon', sent: 'Envoyé', confirmed: 'Confirmé', in_progress: 'Réception en cours', received: 'Reçu', invoiced: 'Facturé', cancelled: 'Annulé',
+    },
+    receptionStatus: { draft: 'À contrôler', confirmed: 'Confirmée', cancelled: 'Annulée' },
+    supplierType: { individual: 'Particulier', company: 'Entreprise' },
     quoteStatus: {
         draft: 'Brouillon', sent: 'Envoyé', accepted: 'Accepté', rejected: 'Refusé', expired: 'Expiré', converted: 'Converti',
     },
@@ -68,7 +76,10 @@ export const variants = {
     leadStatus: { new: 'outline', contacted: 'secondary', qualified: 'default', unqualified: 'outline', converted: 'default', lost: 'destructive' },
     stage: { closed_won: 'default', closed_lost: 'destructive' },
     activityStatus: { completed: 'default', cancelled: 'outline', in_progress: 'secondary', pending: 'outline' },
-    priority: { high: 'destructive', medium: 'secondary', low: 'outline' },
+    priority: { urgent: 'destructive', high: 'destructive', medium: 'secondary', low: 'outline' },
+    purchaseRequestStatus: { draft: 'outline', submitted: 'secondary', approved: 'default', rejected: 'destructive', converted: 'default', cancelled: 'outline' },
+    purchaseOrderStatus: { draft: 'outline', sent: 'secondary', confirmed: 'secondary', in_progress: 'secondary', received: 'default', invoiced: 'default', cancelled: 'destructive' },
+    receptionStatus: { draft: 'secondary', confirmed: 'default', cancelled: 'outline' },
     quoteStatus: { draft: 'outline', sent: 'secondary', accepted: 'default', converted: 'default', rejected: 'destructive', expired: 'outline' },
     orderStatus: { draft: 'outline', confirmed: 'secondary', in_progress: 'secondary', delivered: 'default', invoiced: 'default', cancelled: 'destructive' },
     invoiceStatus: { draft: 'outline', sent: 'secondary', partial: 'secondary', paid: 'default', overdue: 'destructive', cancelled: 'outline' },

@@ -10,6 +10,7 @@ use App\Models\Auth\User;
 use App\Models\Company\Company;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseRequest;
+use App\Models\Purchasing\Supplier;
 use Tests\TestCase;
 
 class PurchaseRequestTest extends TestCase
@@ -586,7 +587,8 @@ class PurchaseRequestTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['purchase_requests.convert']);
 
-        $pr = PurchaseRequest::factory()->approved()->create(['company_id' => $company->id]);
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
+        $pr = PurchaseRequest::factory()->approved()->create(['company_id' => $company->id, 'supplier_id' => $supplier->id]);
 
         $response = $this->withHeaders($this->authHeaders($user))
             ->postJson("/api/purchase-requests/{$pr->id}/convert-to-order");
@@ -598,6 +600,26 @@ class PurchaseRequestTest extends TestCase
             'company_id'          => $company->id,
             'purchase_request_id' => $pr->id,
         ]);
+    }
+
+    public function test_conversion_requires_a_supplier(): void
+    {
+        ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
+        $this->giveUserPermissions($user, $company, ['purchase_requests.convert']);
+
+        $pr = PurchaseRequest::factory()->approved()->create(['company_id' => $company->id, 'supplier_id' => null]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/purchase-requests/{$pr->id}/convert-to-order")
+            ->assertUnprocessable();
+
+        $supplier = Supplier::factory()->create(['company_id' => $company->id]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/purchase-requests/{$pr->id}/convert-to-order", ['supplier_id' => $supplier->id])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('purchase_orders', ['purchase_request_id' => $pr->id, 'supplier_id' => $supplier->id]);
     }
 
     public function test_non_approved_purchase_request_cannot_be_converted(): void

@@ -5,13 +5,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatMoney } from '@/composables/format';
 
 /**
- * Read-only lines and totals of a sales document. `document` carries
- * subtotal_ht, total_discount, total_tax, total_ttc and `lines`.
- * With `showProgress`, order lines also show delivered / invoiced quantities.
+ * Read-only lines and totals of a sales or purchase document. `document`
+ * carries subtotal_ht, total_discount, total_tax, total_ttc and `lines`.
+ * With `showProgress`, order lines also show fulfilled (delivered / received)
+ * and invoiced quantities.
  */
 defineProps({
     document: { type: Object, required: true },
     showProgress: { type: Boolean, default: false },
+    progressField: { type: String, default: 'delivered_quantity' },
+    progressLabel: { type: String, default: 'Livré' },
 });
 
 const qty = (value) => Number(value ?? 0);
@@ -25,7 +28,7 @@ const qty = (value) => Number(value ?? 0);
                 <TableRow>
                     <TableHead class="pl-6">Description</TableHead>
                     <TableHead class="text-right">Qté</TableHead>
-                    <TableHead v-if="showProgress" class="hidden text-right sm:table-cell">Livré</TableHead>
+                    <TableHead v-if="showProgress" class="hidden text-right sm:table-cell">{{ progressLabel }}</TableHead>
                     <TableHead v-if="showProgress" class="hidden text-right sm:table-cell">Facturé</TableHead>
                     <TableHead class="hidden text-right md:table-cell">P.U. HT</TableHead>
                     <TableHead class="hidden text-right lg:table-cell">Remise</TableHead>
@@ -41,8 +44,8 @@ const qty = (value) => Number(value ?? 0);
                     </TableCell>
                     <TableCell class="text-right tabular-nums">{{ qty(line.quantity) }}</TableCell>
                     <TableCell v-if="showProgress" class="hidden text-right tabular-nums sm:table-cell"
-                        :class="qty(line.delivered_quantity) >= qty(line.quantity) ? '' : 'text-muted-foreground'">
-                        {{ qty(line.delivered_quantity) }}
+                        :class="qty(line[progressField]) >= qty(line.quantity) ? '' : 'text-muted-foreground'">
+                        {{ qty(line[progressField]) }}
                     </TableCell>
                     <TableCell v-if="showProgress" class="hidden text-right tabular-nums sm:table-cell"
                         :class="qty(line.invoiced_quantity) >= qty(line.quantity) ? '' : 'text-muted-foreground'">

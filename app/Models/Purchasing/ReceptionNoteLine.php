@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Purchasing;
 
+use App\Models\Inventory\Product;
 use App\Traits\BelongsToCompany;
 use Database\Factories\Purchasing\ReceptionNoteLineFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -61,5 +62,10 @@ class ReceptionNoteLine extends Model
     public function acceptedQuantity(): string
     {
         return bcsub((string) $this->received_quantity, (string) $this->rejected_quantity, 4);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 }

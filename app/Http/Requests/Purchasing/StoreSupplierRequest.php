@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Purchasing;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreSupplierRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -29,7 +32,7 @@ class StoreSupplierRequest extends FormRequest
             'tax_id'              => ['nullable', 'string', 'max:50'],
             'ice'                 => ['nullable', 'string', 'max:50'],
             'rc'                  => ['nullable', 'string', 'max:50'],
-            'payment_term_id'     => ['nullable', 'integer', 'exists:payment_terms,id'],
+            'payment_term_id'     => ['nullable', 'integer', $this->inCompanyOrShared('payment_terms')],
             'credit_limit'        => ['nullable', 'numeric', 'min:0'],
             'bank_name'           => ['nullable', 'string', 'max:255'],
             'bank_account_number' => ['nullable', 'string', 'max:100'],

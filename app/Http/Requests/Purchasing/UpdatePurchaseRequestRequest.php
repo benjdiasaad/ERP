@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Purchasing;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePurchaseRequestRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -17,7 +20,7 @@ class UpdatePurchaseRequestRequest extends FormRequest
     {
         return [
             'title'                      => ['sometimes', 'required', 'string', 'max:255'],
-            'supplier_id'                => ['sometimes', 'nullable', 'integer', 'exists:suppliers,id'],
+            'supplier_id'                => ['sometimes', 'nullable', 'integer', $this->inCompany('suppliers')],
             'description'                => ['sometimes', 'nullable', 'string'],
             'priority'                   => ['sometimes', 'nullable', 'in:low,medium,high,urgent'],
             'required_date'              => ['sometimes', 'nullable', 'date'],

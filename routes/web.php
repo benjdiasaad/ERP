@@ -7,6 +7,11 @@ use App\Http\Controllers\Web\CRM\ContactController;
 use App\Http\Controllers\Web\CRM\LeadController;
 use App\Http\Controllers\Web\CRM\OpportunityController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\Purchasing\PurchaseInvoiceController;
+use App\Http\Controllers\Web\Purchasing\PurchaseOrderController;
+use App\Http\Controllers\Web\Purchasing\PurchaseRequestController;
+use App\Http\Controllers\Web\Purchasing\ReceptionNoteController;
+use App\Http\Controllers\Web\Purchasing\SupplierController;
 use App\Http\Controllers\Web\Sales\CreditNoteController;
 use App\Http\Controllers\Web\Sales\CustomerController;
 use App\Http\Controllers\Web\Sales\DeliveryNoteController;
@@ -147,6 +152,74 @@ Route::middleware('auth')->group(function () {
                 Route::post("credit-notes/{creditNote}/{$action}", [CreditNoteController::class, $action])
                     ->middleware("permission:credit_notes.{$action}")
                     ->name("credit-notes.{$action}");
+            }
+        });
+
+        Route::prefix('purchasing')->name('purchasing.')->group(function () {
+            Route::resource('suppliers', SupplierController::class)
+                ->middlewareFor('index', 'permission:suppliers.view_any')
+                ->middlewareFor('show', 'permission:suppliers.view')
+                ->middlewareFor(['create', 'store'], 'permission:suppliers.create')
+                ->middlewareFor(['edit', 'update'], 'permission:suppliers.update')
+                ->middlewareFor('destroy', 'permission:suppliers.delete');
+
+            Route::resource('requests', PurchaseRequestController::class)
+                ->parameters(['requests' => 'purchaseRequest'])
+                ->middlewareFor('index', 'permission:purchase_requests.view_any')
+                ->middlewareFor('show', 'permission:purchase_requests.view')
+                ->middlewareFor(['create', 'store'], 'permission:purchase_requests.create')
+                ->middlewareFor(['edit', 'update'], 'permission:purchase_requests.update')
+                ->middlewareFor('destroy', 'permission:purchase_requests.delete');
+            foreach (['submit', 'approve', 'reject', 'cancel', 'convert'] as $action) {
+                Route::post("requests/{purchaseRequest}/{$action}", [PurchaseRequestController::class, $action])
+                    ->middleware("permission:purchase_requests.{$action}")
+                    ->name("requests.{$action}");
+            }
+
+            Route::resource('orders', PurchaseOrderController::class)
+                ->parameters(['orders' => 'purchaseOrder'])
+                ->middlewareFor('index', 'permission:purchase_orders.view_any')
+                ->middlewareFor('show', 'permission:purchase_orders.view')
+                ->middlewareFor(['create', 'store'], 'permission:purchase_orders.create')
+                ->middlewareFor(['edit', 'update'], 'permission:purchase_orders.update')
+                ->middlewareFor('destroy', 'permission:purchase_orders.delete');
+            foreach ([
+                'send'              => 'send',
+                'confirm'           => 'confirm',
+                'cancel'            => 'cancel',
+                'generate-reception' => 'generate_reception',
+                'generate-invoice'  => 'generate_invoice',
+            ] as $uri => $permission) {
+                Route::post("orders/{purchaseOrder}/{$uri}", [PurchaseOrderController::class, str($uri)->camel()->toString()])
+                    ->middleware("permission:purchase_orders.{$permission}")
+                    ->name("orders.{$uri}");
+            }
+
+            // Receptions are generated from a purchase order, so there is no create form.
+            Route::resource('receptions', ReceptionNoteController::class)
+                ->only(['index', 'show', 'update', 'destroy'])
+                ->parameters(['receptions' => 'receptionNote'])
+                ->middlewareFor('index', 'permission:reception_notes.view_any')
+                ->middlewareFor('show', 'permission:reception_notes.view')
+                ->middlewareFor('update', 'permission:reception_notes.update')
+                ->middlewareFor('destroy', 'permission:reception_notes.delete');
+            foreach (['confirm', 'cancel'] as $action) {
+                Route::post("receptions/{receptionNote}/{$action}", [ReceptionNoteController::class, $action])
+                    ->middleware("permission:reception_notes.{$action}")
+                    ->name("receptions.{$action}");
+            }
+
+            Route::resource('invoices', PurchaseInvoiceController::class)
+                ->parameters(['invoices' => 'purchaseInvoice'])
+                ->middlewareFor('index', 'permission:purchase_invoices.view_any')
+                ->middlewareFor('show', 'permission:purchase_invoices.view')
+                ->middlewareFor(['create', 'store'], 'permission:purchase_invoices.create')
+                ->middlewareFor(['edit', 'update'], 'permission:purchase_invoices.update')
+                ->middlewareFor('destroy', 'permission:purchase_invoices.delete');
+            foreach (['send' => 'send', 'cancel' => 'cancel', 'record-payment' => 'record_payment'] as $uri => $permission) {
+                Route::post("invoices/{purchaseInvoice}/{$uri}", [PurchaseInvoiceController::class, str($uri)->camel()->toString()])
+                    ->middleware("permission:purchase_invoices.{$permission}")
+                    ->name("invoices.{$uri}");
             }
         });
     });

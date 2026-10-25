@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\PurchaseRequest;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
@@ -207,7 +208,14 @@ class PurchaseRequestService
      *
      * TODO: Implement full PurchaseOrder creation once App\Models\Purchasing\PurchaseOrder is available.
      */
-    public function convertToOrder(PurchaseRequest $pr): \App\Models\Purchasing\PurchaseOrder
+    /**
+     * Convert an approved request into a draft purchase order.
+     *
+     * The supplier comes from the request or from $supplierId (requests may be
+     * raised before a supplier is chosen). Estimated prices become order prices,
+     * with the product's VAT rate (20 % for free lines).
+     */
+    public function convertToOrder(PurchaseRequest $pr, ?int $supplierId = null): PurchaseOrder
     {
         if ($pr->status !== 'approved') {
             throw ValidationException::withMessages([
@@ -215,11 +223,21 @@ class PurchaseRequestService
             ]);
         }
 
-        return DB::transaction(function () use ($pr): \App\Models\Purchasing\PurchaseOrder {
-            // TODO: Replace with proper reference generation once PurchaseOrder is fully implemented.
-            $order = \App\Models\Purchasing\PurchaseOrder::create([
+        $supplierId ??= $pr->supplier_id;
+
+        if (!$supplierId) {
+            throw ValidationException::withMessages([
+                'supplier_id' => 'Choose a supplier to convert this purchase request into an order.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($pr, $supplierId): PurchaseOrder {
+            $pr->loadMissing('lines.product');
+            $orderService = app(PurchaseOrderService::class);
+
+            $order = PurchaseOrder::create([
                 'company_id'          => $pr->company_id,
-                'supplier_id'         => $pr->supplier_id,
+                'supplier_id'         => $supplierId,
                 'purchase_request_id' => $pr->id,
                 'reference'           => $this->generateOrderReference(),
                 'order_date'          => now()->toDateString(),
@@ -229,20 +247,25 @@ class PurchaseRequestService
             ]);
 
             foreach ($pr->lines as $line) {
-                $order->lines()->create([
-                    'company_id'           => $line->company_id,
-                    'product_id'           => $line->product_id,
-                    'description'          => $line->description,
-                    'quantity'             => $line->quantity,
-                    'unit'                 => $line->unit,
-                    'estimated_unit_price' => $line->estimated_unit_price,
-                    'estimated_total'      => $line->estimated_total,
-                    'notes'                => $line->notes,
-                    'sort_order'           => $line->sort_order,
-                ]);
+                $order->lines()->create($orderService->calculateLineAmounts([
+                    'company_id'    => $line->company_id,
+                    'product_id'    => $line->product_id,
+                    'description'   => $line->description,
+                    'quantity'      => $line->quantity,
+                    'unit'          => $line->unit,
+                    'unit_price_ht' => $line->estimated_unit_price,
+                    'tax_rate'      => $line->product?->tax_rate ?? 20,
+                    'sort_order'    => $line->sort_order,
+                ]));
             }
 
-            $pr->update(['status' => 'converted']);
+            $orderService->calculateTotals($order);
+
+            if (!$pr->supplier_id) {
+                $pr->supplier_id = $supplierId;
+            }
+            $pr->status = 'converted';
+            $pr->save();
 
             return $order->fresh(['lines', 'supplier']);
         });

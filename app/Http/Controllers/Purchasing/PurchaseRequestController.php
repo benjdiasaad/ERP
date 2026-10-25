@@ -13,6 +13,7 @@ use App\Services\Purchasing\PurchaseRequestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class PurchaseRequestController extends Controller
@@ -141,12 +142,17 @@ class PurchaseRequestController extends Controller
         return new PurchaseRequestResource($purchaseRequest);
     }
 
-    public function convertToOrder(PurchaseRequest $purchaseRequest): JsonResponse
+    public function convertToOrder(Request $request, PurchaseRequest $purchaseRequest): JsonResponse
     {
         $this->authorize('convert', $purchaseRequest);
 
+        $data = $request->validate([
+            'supplier_id' => ['nullable', 'integer', Rule::exists('suppliers', 'id')
+                ->where('company_id', $request->user()->current_company_id)->whereNull('deleted_at')],
+        ]);
+
         try {
-            $order = $this->purchaseRequestService->convertToOrder($purchaseRequest);
+            $order = $this->purchaseRequestService->convertToOrder($purchaseRequest, $data['supplier_id'] ?? null);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }

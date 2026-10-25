@@ -1,7 +1,7 @@
 import {
     LayoutDashboard, Users, Building2, ShoppingCart, FileText, Truck, Package, Warehouse,
     Landmark, BookOpen, ShieldCheck, CalendarDays, Contact, Target, TrendingUp, ListTodo,
-    FolderKanban, UserCog, Settings, FileMinus,
+    FolderKanban, UserCog, Settings, FileMinus, ClipboardList, PackageCheck,
 } from '@lucide/vue';
 
 /**
@@ -37,9 +37,11 @@ export const navigation = [
     {
         label: 'Achats',
         items: [
-            { label: 'Fournisseurs', permission: 'suppliers.view_any', icon: Building2 },
-            { label: 'Bons de commande', permission: 'purchase_orders.view_any', icon: ShoppingCart },
-            { label: 'Factures fournisseurs', permission: 'purchase_invoices.view_any', icon: FileText },
+            { label: 'Fournisseurs', route: 'purchasing.suppliers.index', active: 'purchasing.suppliers.*', permission: 'suppliers.view_any', icon: Building2 },
+            { label: "Demandes d'achat", route: 'purchasing.requests.index', active: 'purchasing.requests.*', permission: 'purchase_requests.view_any', icon: ClipboardList },
+            { label: 'Bons de commande', route: 'purchasing.orders.index', active: 'purchasing.orders.*', permission: 'purchase_orders.view_any', icon: ShoppingCart },
+            { label: 'Réceptions', route: 'purchasing.receptions.index', active: 'purchasing.receptions.*', permission: 'reception_notes.view_any', icon: PackageCheck },
+            { label: 'Factures fournisseurs', route: 'purchasing.invoices.index', active: 'purchasing.invoices.*', permission: 'purchase_invoices.view_any', icon: FileText },
         ],
     },
     {

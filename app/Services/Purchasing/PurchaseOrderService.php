@@ -192,7 +192,11 @@ class PurchaseOrderService
         });
     }
 
-    public function generatePurchaseInvoice(PurchaseOrder $order): array
+    /**
+     * Create a draft supplier invoice for what has not been invoiced yet on
+     * each order line. The due date follows the order's payment terms.
+     */
+    public function generatePurchaseInvoice(PurchaseOrder $order): PurchaseInvoice
     {
         if (!in_array($order->status, ['confirmed', 'in_progress', 'received'], true)) {
             throw ValidationException::withMessages([
@@ -200,8 +204,52 @@ class PurchaseOrderService
             ]);
         }
 
-        // TODO: Implement once PurchaseInvoice model is available (Task 15).
-        return ['message' => 'Purchase invoice generation pending Task 15 implementation.', 'order_id' => $order->id];
+        $order->loadMissing(['lines', 'paymentTerm']);
+
+        $lines = $order->lines
+            ->map(fn ($line) => [$line, round((float) $line->quantity - (float) $line->invoiced_quantity, 4)])
+            ->filter(fn ($pair) => $pair[1] > 0);
+
+        if ($lines->isEmpty()) {
+            throw ValidationException::withMessages([
+                'status' => 'Every line of this purchase order has already been invoiced.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($order, $lines): PurchaseInvoice {
+            $invoice = app(PurchaseInvoiceService::class)->create([
+                'supplier_id'       => $order->supplier_id,
+                'purchase_order_id' => $order->id,
+                'invoice_date'      => now()->toDateString(),
+                'due_date'          => now()->addDays((int) ($order->paymentTerm?->days ?? 0))->toDateString(),
+                'payment_term_id'   => $order->payment_term_id,
+                'currency_id'       => $order->currency_id,
+                'notes'             => $order->notes,
+                'lines'             => $lines->values()->map(fn ($pair) => [
+                    'product_id'     => $pair[0]->product_id,
+                    'description'    => $pair[0]->description,
+                    'quantity'       => $pair[1],
+                    'unit'           => $pair[0]->unit,
+                    'unit_price_ht'  => $pair[0]->unit_price_ht,
+                    'discount_type'  => $pair[0]->discount_type ?? 'percentage',
+                    'discount_value' => $pair[0]->discount_value ?? 0,
+                    'tax_id'         => $pair[0]->tax_id,
+                    'tax_rate'       => $pair[0]->tax_rate,
+                ])->all(),
+            ]);
+
+            foreach ($lines as [$line, $quantity]) {
+                $line->update(['invoiced_quantity' => round((float) $line->invoiced_quantity + $quantity, 4)]);
+            }
+
+            $order->amount_invoiced = round((float) $order->amount_invoiced + (float) $invoice->total_ttc, 2);
+            if ($order->status === 'received') {
+                $order->status = 'invoiced';
+            }
+            $order->save();
+
+            return $invoice;
+        });
     }
 
     // ─── Calculations ─────────────────────────────────────────────────────────

@@ -123,7 +123,8 @@ class ReceptionNoteService
             // Check if all lines are fully received → mark order as received
             if ($order) {
                 $order->loadMissing('lines');
-                $allReceived = $order->lines->every(function ($orderLine) {
+                // every() is true on an empty collection: require lines first.
+                $allReceived = $order->lines->isNotEmpty() && $order->lines->every(function ($orderLine) {
                     return bccomp(
                         (string) $orderLine->received_quantity,
                         (string) $orderLine->quantity,

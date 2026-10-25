@@ -11,24 +11,6 @@ use Illuminate\Database\Seeder;
 class RoleSeeder extends Seeder
 {
     /**
-     * All modules (must match PermissionSeeder).
-     */
-    private array $allModules = [
-        'users', 'roles', 'permissions', 'companies',
-        'personnels', 'departments', 'positions', 'contracts', 'leaves', 'attendances',
-        'customers', 'quotes', 'sales_orders', 'invoices', 'credit_notes', 'delivery_notes',
-        'suppliers', 'purchase_requests', 'purchase_orders', 'reception_notes', 'purchase_invoices',
-        'products', 'product_categories', 'warehouses', 'stock_movements', 'stock_inventories',
-        'currencies', 'taxes', 'payment_terms', 'payment_methods',
-        'chart_of_accounts', 'bank_accounts', 'journal_entries', 'payments',
-        'caution_types', 'cautions',
-        'event_categories', 'events',
-        'contacts', 'leads', 'opportunities', 'activities',
-        'projects', 'tasks', 'timesheets',
-        'settings', 'sequences', 'audit_logs', 'notifications', 'attachments',
-    ];
-
-    /**
      * Modules accessible to the User role.
      */
     private array $userModules = [
@@ -38,36 +20,6 @@ class RoleSeeder extends Seeder
         'cautions', 'events',
         'contacts', 'leads', 'opportunities', 'activities',
         'projects', 'tasks', 'timesheets',
-    ];
-
-    /**
-     * Extra actions per module (must match PermissionSeeder).
-     */
-    private array $extraActions = [
-        'quotes'            => ['send', 'accept', 'reject', 'convert', 'duplicate'],
-        'sales_orders'      => ['confirm', 'cancel', 'generate_invoice', 'generate_delivery_note'],
-        'invoices'          => ['send', 'cancel', 'record_payment', 'create_credit_note'],
-        'credit_notes'      => ['confirm', 'apply'],
-        'delivery_notes'    => ['ship', 'deliver'],
-        'purchase_requests' => ['submit', 'approve', 'reject', 'convert_to_order'],
-        'purchase_orders'   => ['send', 'confirm', 'cancel', 'generate_reception', 'generate_invoice'],
-        'reception_notes'   => ['confirm', 'cancel'],
-        'purchase_invoices' => ['record_payment'],
-        'stock_movements'   => ['transfer'],
-        'stock_inventories' => ['start', 'validate'],
-        'journal_entries'   => ['post', 'cancel'],
-        'payments'          => ['confirm', 'cancel'],
-        'cautions'          => ['activate', 'partial_return', 'full_return', 'extend', 'forfeit', 'cancel'],
-        'events'            => ['confirm', 'cancel', 'complete', 'postpone'],
-        'contacts'          => ['merge'],
-        'leads'             => ['qualify', 'convert', 'assign'],
-        'opportunities'     => ['advance', 'win', 'lose'],
-        'activities'        => ['complete'],
-        'projects'          => ['update_progress'],
-        'tasks'             => ['assign', 'change_status'],
-        'timesheets'        => ['submit', 'approve', 'reject'],
-        'roles'             => ['assign_permissions'],
-        'users'             => ['activate', 'deactivate', 'assign_role'],
     ];
 
     /**
@@ -146,7 +98,7 @@ class RoleSeeder extends Seeder
 
         $slugs = [];
 
-        foreach ($this->allModules as $module) {
+        foreach (array_keys(PermissionSeeder::slugsByModule()) as $module) {
             $isRestricted = in_array($module, $this->managerRestrictedModules, true);
 
             // Standard actions allowed for manager
@@ -163,7 +115,7 @@ class RoleSeeder extends Seeder
             }
 
             // Extra/module-specific actions (all allowed for manager)
-            foreach ($this->extraActions[$module] ?? [] as $action) {
+            foreach (PermissionSeeder::extraActionsFor($module) as $action) {
                 $slugs[] = "{$module}.{$action}";
             }
         }
@@ -197,7 +149,7 @@ class RoleSeeder extends Seeder
             }
 
             // Extra/module-specific actions
-            foreach ($this->extraActions[$module] ?? [] as $action) {
+            foreach (PermissionSeeder::extraActionsFor($module) as $action) {
                 $slugs[] = "{$module}.{$action}";
             }
         }
@@ -224,7 +176,7 @@ class RoleSeeder extends Seeder
 
         $slugs = [];
 
-        foreach ($this->allModules as $module) {
+        foreach (array_keys(PermissionSeeder::slugsByModule()) as $module) {
             $slugs[] = "{$module}.view_any";
             $slugs[] = "{$module}.view";
         }

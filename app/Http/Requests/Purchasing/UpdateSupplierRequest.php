@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Purchasing;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateSupplierRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -29,7 +32,7 @@ class UpdateSupplierRequest extends FormRequest
             'tax_id'              => ['sometimes', 'nullable', 'string', 'max:50'],
             'ice'                 => ['sometimes', 'nullable', 'string', 'max:50'],
             'rc'                  => ['sometimes', 'nullable', 'string', 'max:50'],
-            'payment_term_id'     => ['sometimes', 'nullable', 'integer', 'exists:payment_terms,id'],
+            'payment_term_id'     => ['sometimes', 'nullable', 'integer', $this->inCompanyOrShared('payment_terms')],
             'credit_limit'        => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'bank_name'           => ['sometimes', 'nullable', 'string', 'max:255'],
             'bank_account_number' => ['sometimes', 'nullable', 'string', 'max:100'],

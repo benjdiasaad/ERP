@@ -28,9 +28,10 @@ class PurchaseRequest extends Model
     protected array $statusTransitions = [
         'draft'     => ['submitted', 'cancelled'],
         'submitted' => ['approved', 'rejected', 'cancelled'],
-        'approved'  => ['cancelled'],
+        'approved'  => ['converted', 'cancelled'],
         'rejected'  => [],
         'cancelled' => [],
+        'converted' => [],
     ];
 
     protected $fillable = [
@@ -116,5 +117,10 @@ class PurchaseRequest extends Model
     public function scopePending(Builder $query): Builder
     {
         return $query->whereIn('status', ['draft', 'submitted']);
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
     }
 }

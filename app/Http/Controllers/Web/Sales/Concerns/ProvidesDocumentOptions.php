@@ -32,7 +32,7 @@ trait ProvidesDocumentOptions
                     'value'      => $p->id,
                     'label'      => "{$p->code} · {$p->name}",
                     'name'       => $p->name,
-                    'sale_price' => (float) $p->sale_price,
+                    'price'      => (float) $p->sale_price,
                     'tax_rate'   => (float) $p->tax_rate,
                     'unit'       => $p->unit,
                 ]),

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Purchasing;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateReceptionNoteRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -20,8 +23,8 @@ class UpdateReceptionNoteRequest extends FormRequest
             'notes'                          => ['nullable', 'string'],
             'lines'                          => ['sometimes', 'array', 'min:1'],
             'lines.*.id'                     => ['nullable', 'integer'],
-            'lines.*.purchase_order_line_id' => ['nullable', 'integer', 'exists:purchase_order_lines,id'],
-            'lines.*.product_id'             => ['nullable', 'integer'],
+            'lines.*.purchase_order_line_id' => ['nullable', 'integer', $this->inCompany('purchase_order_lines', 'id', false)],
+            'lines.*.product_id'             => ['nullable', 'integer', $this->inCompany('products')],
             'lines.*.description'            => ['required_with:lines', 'string'],
             'lines.*.ordered_quantity'       => ['required_with:lines', 'numeric', 'min:0'],
             'lines.*.received_quantity'      => ['required_with:lines', 'numeric', 'min:0'],

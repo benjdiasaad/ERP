@@ -12,7 +12,7 @@ class PermissionSeeder extends Seeder
     /**
      * Standard actions available for every module.
      */
-    private array $standardActions = [
+    private const STANDARD_ACTIONS = [
         'view_any',
         'view',
         'create',
@@ -28,22 +28,24 @@ class PermissionSeeder extends Seeder
     /**
      * Extra actions per module (in addition to standard actions).
      */
-    private array $extraActions = [
+    private const EXTRA_ACTIONS = [
         'quotes'            => ['send', 'accept', 'reject', 'convert', 'duplicate'],
         'sales_orders'      => ['confirm', 'cancel', 'generate_invoice', 'generate_delivery_note'],
         'invoices'          => ['send', 'cancel', 'record_payment', 'create_credit_note'],
         'credit_notes'      => ['confirm', 'apply'],
-        'delivery_notes'    => ['ship', 'deliver'],
-        'purchase_requests' => ['submit', 'approve', 'reject', 'convert_to_order'],
+        'delivery_notes'    => ['ship', 'deliver', 'return'],
+        'purchase_requests' => ['submit', 'approve', 'reject', 'cancel', 'convert'],
         'purchase_orders'   => ['send', 'confirm', 'cancel', 'generate_reception', 'generate_invoice'],
         'reception_notes'   => ['confirm', 'cancel'],
-        'purchase_invoices' => ['record_payment'],
+        'purchase_invoices' => ['send', 'cancel', 'record_payment'],
         'stock_movements'   => ['transfer'],
-        'stock_inventories' => ['start', 'validate'],
+        'stock_inventories' => ['start', 'validate', 'complete', 'cancel'],
         'journal_entries'   => ['post', 'cancel'],
         'payments'          => ['confirm', 'cancel'],
         'cautions'          => ['activate', 'partial_return', 'full_return', 'extend', 'forfeit', 'cancel'],
         'events'            => ['confirm', 'cancel', 'complete', 'postpone'],
+        'event_participants' => ['invite', 'bulk_invite'],
+        'leaves'            => ['approve', 'reject'],
         'contacts'          => ['merge'],
         'leads'             => ['qualify', 'convert', 'assign'],
         'opportunities'     => ['advance', 'win', 'lose'],
@@ -58,7 +60,7 @@ class PermissionSeeder extends Seeder
     /**
      * All modules grouped by domain.
      */
-    private array $modules = [
+    private const MODULES = [
         // Auth
         'users',
         'roles',
@@ -89,6 +91,7 @@ class PermissionSeeder extends Seeder
         'products',
         'product_categories',
         'warehouses',
+        'stock_levels',
         'stock_movements',
         'stock_inventories',
         // Finance
@@ -106,6 +109,7 @@ class PermissionSeeder extends Seeder
         // Event
         'event_categories',
         'events',
+        'event_participants',
         // CRM
         'contacts',
         'leads',
@@ -123,16 +127,32 @@ class PermissionSeeder extends Seeder
         'attachments',
     ];
 
+    /**
+     * Every module with its actions — the single source of truth, also used by RoleSeeder.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function slugsByModule(): array
+    {
+        $modules = [];
+        foreach (self::MODULES as $module) {
+            $modules[$module] = array_merge(self::STANDARD_ACTIONS, self::EXTRA_ACTIONS[$module] ?? []);
+        }
+
+        return $modules;
+    }
+
+    /** @return array<int, string> Module-specific (non-CRUD) actions. */
+    public static function extraActionsFor(string $module): array
+    {
+        return self::EXTRA_ACTIONS[$module] ?? [];
+    }
+
     public function run(): void
     {
         $count = 0;
 
-        foreach ($this->modules as $module) {
-            $actions = array_merge(
-                $this->standardActions,
-                $this->extraActions[$module] ?? []
-            );
-
+        foreach (self::slugsByModule() as $module => $actions) {
             foreach ($actions as $action) {
                 $slug = "{$module}.{$action}";
                 $name = $this->humanReadableName($module, $action);
