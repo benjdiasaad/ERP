@@ -314,6 +314,6 @@ class PurchaseOrderService
             ->whereYear('created_at', $year)
             ->count() + 1;
 
-        return sprintf('PO-%d-%05d', $year, $count);
+        return sprintf('BCA-%d-%05d', $year, $count);
     }
 }

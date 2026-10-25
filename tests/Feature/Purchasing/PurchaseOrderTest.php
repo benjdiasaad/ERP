@@ -134,7 +134,7 @@ class PurchaseOrderTest extends TestCase
 
         $response->assertCreated();
         $reference = $response->json('data.reference');
-        $this->assertMatchesRegularExpression('/^PO-\d{4}-\d{5}$/', $reference);
+        $this->assertMatchesRegularExpression('/^BCA-\d{4}-\d{5}$/', $reference);
     }
 
     public function test_store_calculates_line_amounts_correctly(): void

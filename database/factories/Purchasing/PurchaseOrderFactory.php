@@ -18,7 +18,7 @@ class PurchaseOrderFactory extends Factory
         return [
             'company_id'  => Company::factory(),
             'supplier_id' => Supplier::factory(),
-            'reference'   => 'PO-' . now()->year . '-' . str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
+            'reference'   => 'BCA-' . now()->year . '-' . str_pad((string) $this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
             'status'      => 'draft',
             'order_date'  => now()->toDateString(),
             'subtotal_ht' => 0,
