@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Inventory;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateWarehouseRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -23,7 +26,7 @@ class UpdateWarehouseRequest extends FormRequest
             'state'       => ['nullable', 'string', 'max:100'],
             'country'     => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:20'],
-            'manager_id'  => ['nullable', 'integer', 'exists:personnels,id'],
+            'manager_id'  => ['nullable', 'integer', $this->inCompany('personnels')],
             'is_default'  => ['nullable', 'boolean'],
             'is_active'   => ['nullable', 'boolean'],
             'notes'       => ['nullable', 'string'],

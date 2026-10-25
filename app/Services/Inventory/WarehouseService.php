@@ -20,8 +20,10 @@ class WarehouseService
     {
         return DB::transaction(function () use ($data): Warehouse {
             $data['company_id'] = auth()->user()->current_company_id;
+            $data['code'] = $data['code'] ?? $this->generateCode();
 
             $warehouse = Warehouse::create($data);
+            $this->keepSingleDefault($warehouse);
 
             return $warehouse->fresh();
         });
@@ -34,6 +36,7 @@ class WarehouseService
     {
         return DB::transaction(function () use ($warehouse, $data): Warehouse {
             $warehouse->update(Arr::except($data, ['company_id']));
+            $this->keepSingleDefault($warehouse);
 
             return $warehouse->fresh();
         });
@@ -70,7 +73,7 @@ class WarehouseService
      */
     public function getDefault(): ?Warehouse
     {
-        return Warehouse::where('default', true)->first();
+        return Warehouse::where('is_default', true)->first();
     }
 
     /**
@@ -81,13 +84,34 @@ class WarehouseService
         return DB::transaction(function () use ($warehouse): Warehouse {
             // Unset any existing default
             Warehouse::where('company_id', $warehouse->company_id)
-                ->where('default', true)
-                ->update(['default' => false]);
+                ->where('is_default', true)
+                ->update(['is_default' => false]);
 
             // Set this warehouse as default
-            $warehouse->update(['default' => true]);
+            $warehouse->update(['is_default' => true]);
 
             return $warehouse->fresh();
         });
+    }
+
+    /**
+     * Only one default warehouse per company: the one just saved as default wins.
+     */
+    private function keepSingleDefault(Warehouse $warehouse): void
+    {
+        if ($warehouse->is_default) {
+            Warehouse::whereKeyNot($warehouse->id)->where('is_default', true)->update(['is_default' => false]);
+        }
+    }
+
+    /**
+     * Next WH-NNNNN code for the current company (soft-deleted included, so codes are never reused).
+     */
+    private function generateCode(): string
+    {
+        $last = Warehouse::withTrashed()->where('code', 'like', 'WH-%')->orderByDesc('code')->value('code');
+        $next = $last && preg_match('/^WH-(\d+)$/', $last, $m) ? ((int) $m[1]) + 1 : 1;
+
+        return sprintf('WH-%05d', $next);
     }
 }

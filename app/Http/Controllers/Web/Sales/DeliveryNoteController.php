@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web\Sales;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Web\Inventory\Concerns\ProvidesStockOptions;
 use App\Http\Controllers\Web\Sales\Concerns\ProvidesDocumentOptions;
 use App\Http\Requests\Sales\StoreDeliveryNoteRequest;
 use App\Http\Requests\Sales\UpdateDeliveryNoteRequest;
 use App\Http\Resources\Sales\DeliveryNoteResource;
+use App\Models\Inventory\Warehouse;
 use App\Models\Sales\DeliveryNote;
 use App\Services\Sales\DeliveryNoteService;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +20,7 @@ use Inertia\Response;
 
 class DeliveryNoteController extends Controller
 {
-    use ProvidesDocumentOptions;
+    use ProvidesDocumentOptions, ProvidesStockOptions;
 
     public const STATUSES = ['draft', 'ready', 'shipped', 'delivered', 'returned'];
 
@@ -64,11 +66,13 @@ class DeliveryNoteController extends Controller
         $options = $this->documentOptions();
 
         return Inertia::render('Sales/DeliveryNotes/Create', [
-            'customers' => $options['customers'],
-            'products'  => $options['products'],
-            'defaults'  => [
-                'customer_id' => $request->integer('customer_id') ?: null,
-                'date'        => now()->toDateString(),
+            'customers'  => $options['customers'],
+            'products'   => $options['products'],
+            'warehouses' => $this->warehouseOptions(),
+            'defaults'   => [
+                'customer_id'  => $request->integer('customer_id') ?: null,
+                'date'         => now()->toDateString(),
+                'warehouse_id' => Warehouse::defaultId(),
             ],
         ]);
     }
@@ -86,7 +90,7 @@ class DeliveryNoteController extends Controller
     {
         $this->authorize('view', $deliveryNote);
 
-        $deliveryNote->load(['customer', 'salesOrder:id,reference,status', 'lines.product']);
+        $deliveryNote->load(['customer', 'salesOrder:id,reference,status', 'lines.product', 'warehouse:id,code,name']);
 
         return Inertia::render('Sales/DeliveryNotes/Show', [
             'note' => new DeliveryNoteResource($deliveryNote),
@@ -101,9 +105,10 @@ class DeliveryNoteController extends Controller
         $options = $this->documentOptions();
 
         return Inertia::render('Sales/DeliveryNotes/Edit', [
-            'note'      => new DeliveryNoteResource($deliveryNote),
-            'customers' => $options['customers'],
-            'products'  => $options['products'],
+            'note'       => new DeliveryNoteResource($deliveryNote),
+            'customers'  => $options['customers'],
+            'products'   => $options['products'],
+            'warehouses' => $this->warehouseOptions(),
         ]);
     }
 

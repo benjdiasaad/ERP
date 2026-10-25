@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Inventory;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreProductRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -16,7 +19,7 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id'     => ['nullable', 'integer', 'exists:product_categories,id'],
+            'category_id'     => ['nullable', 'integer', $this->inCompany('product_categories')],
             'code'            => ['nullable', 'string', 'max:100'],
             'name'            => ['required', 'string', 'max:255'],
             'description'     => ['nullable', 'string'],

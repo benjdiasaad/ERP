@@ -2,6 +2,7 @@ import {
     LayoutDashboard, Users, Building2, ShoppingCart, FileText, Truck, Package, Warehouse,
     Landmark, BookOpen, ShieldCheck, CalendarDays, Contact, Target, TrendingUp, ListTodo,
     FolderKanban, UserCog, Settings, FileMinus, ClipboardList, PackageCheck,
+    Tags, Boxes, ArrowLeftRight, ClipboardCheck,
 } from '@lucide/vue';
 
 /**
@@ -47,8 +48,12 @@ export const navigation = [
     {
         label: 'Stock',
         items: [
-            { label: 'Produits', permission: 'products.view_any', icon: Package },
-            { label: 'Entrepôts', permission: 'warehouses.view_any', icon: Warehouse },
+            { label: 'Produits', route: 'stock.products.index', active: 'stock.products.*', permission: 'products.view_any', icon: Package },
+            { label: 'Catégories', route: 'stock.categories.index', active: 'stock.categories.*', permission: 'product_categories.view_any', icon: Tags },
+            { label: 'Entrepôts', route: 'stock.warehouses.index', active: 'stock.warehouses.*', permission: 'warehouses.view_any', icon: Warehouse },
+            { label: 'État du stock', route: 'stock.levels.index', active: 'stock.levels.*', permission: 'stock_levels.view_any', icon: Boxes },
+            { label: 'Mouvements', route: 'stock.movements.index', active: 'stock.movements.*', permission: 'stock_movements.view_any', icon: ArrowLeftRight },
+            { label: 'Inventaires', route: 'stock.inventories.index', active: 'stock.inventories.*', permission: 'stock_inventories.view_any', icon: ClipboardCheck },
         ],
     },
     {

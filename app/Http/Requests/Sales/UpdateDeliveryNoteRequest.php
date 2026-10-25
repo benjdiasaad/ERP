@@ -19,6 +19,7 @@ class UpdateDeliveryNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'warehouse_id'             => ['nullable', 'integer', $this->inCompany('warehouses')],
             'expected_delivery_date'   => ['nullable', 'date'],
             'delivery_address'         => ['nullable', 'string', 'max:1000'],
             'carrier'                  => ['nullable', 'string', 'max:255'],

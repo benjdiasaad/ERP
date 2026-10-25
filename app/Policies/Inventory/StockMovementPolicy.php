@@ -43,4 +43,9 @@ class StockMovementPolicy
     {
         return $user->hasPermission('stock_movements.force_delete');
     }
+
+    public function transfer(User $user): bool
+    {
+        return $user->hasPermission('stock_movements.transfer');
+    }
 }

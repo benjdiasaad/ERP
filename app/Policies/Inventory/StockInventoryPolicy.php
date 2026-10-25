@@ -53,4 +53,14 @@ class StockInventoryPolicy
     {
         return $user->hasPermission('stock_inventories.cancel');
     }
+
+    public function start(User $user, StockInventory $inventory): bool
+    {
+        return $user->hasPermission('stock_inventories.start');
+    }
+
+    public function validate(User $user, StockInventory $inventory): bool
+    {
+        return $user->hasPermission('stock_inventories.validate');
+    }
 }

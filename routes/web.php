@@ -7,6 +7,12 @@ use App\Http\Controllers\Web\CRM\ContactController;
 use App\Http\Controllers\Web\CRM\LeadController;
 use App\Http\Controllers\Web\CRM\OpportunityController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\Inventory\ProductCategoryController;
+use App\Http\Controllers\Web\Inventory\ProductController as InventoryProductController;
+use App\Http\Controllers\Web\Inventory\StockInventoryController;
+use App\Http\Controllers\Web\Inventory\StockLevelController;
+use App\Http\Controllers\Web\Inventory\StockMovementController;
+use App\Http\Controllers\Web\Inventory\WarehouseController;
 use App\Http\Controllers\Web\Purchasing\PurchaseInvoiceController;
 use App\Http\Controllers\Web\Purchasing\PurchaseOrderController;
 use App\Http\Controllers\Web\Purchasing\PurchaseRequestController;
@@ -153,6 +159,46 @@ Route::middleware('auth')->group(function () {
                     ->middleware("permission:credit_notes.{$action}")
                     ->name("credit-notes.{$action}");
             }
+        });
+
+        Route::prefix('stock')->name('stock.')->group(function () {
+            Route::resource('products', InventoryProductController::class)
+                ->middlewareFor('index', 'permission:products.view_any')
+                ->middlewareFor('show', 'permission:products.view')
+                ->middlewareFor(['create', 'store'], 'permission:products.create')
+                ->middlewareFor(['edit', 'update'], 'permission:products.update')
+                ->middlewareFor('destroy', 'permission:products.delete');
+
+            Route::resource('categories', ProductCategoryController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->middlewareFor('index', 'permission:product_categories.view_any')
+                ->middlewareFor('store', 'permission:product_categories.create')
+                ->middlewareFor('update', 'permission:product_categories.update')
+                ->middlewareFor('destroy', 'permission:product_categories.delete');
+
+            Route::resource('warehouses', WarehouseController::class)
+                ->middlewareFor('index', 'permission:warehouses.view_any')
+                ->middlewareFor('show', 'permission:warehouses.view')
+                ->middlewareFor(['create', 'store'], 'permission:warehouses.create')
+                ->middlewareFor(['edit', 'update'], 'permission:warehouses.update')
+                ->middlewareFor('destroy', 'permission:warehouses.delete');
+
+            Route::get('levels', [StockLevelController::class, 'index'])->middleware('permission:stock_levels.view_any')->name('levels.index');
+
+            Route::get('movements', [StockMovementController::class, 'index'])->middleware('permission:stock_movements.view_any')->name('movements.index');
+            Route::post('movements', [StockMovementController::class, 'store'])->middleware('permission:stock_movements.create')->name('movements.store');
+            Route::post('movements/transfer', [StockMovementController::class, 'transfer'])->middleware('permission:stock_movements.transfer')->name('movements.transfer');
+
+            Route::resource('inventories', StockInventoryController::class)
+                ->except(['edit'])
+                ->middlewareFor('index', 'permission:stock_inventories.view_any')
+                ->middlewareFor('show', 'permission:stock_inventories.view')
+                ->middlewareFor(['create', 'store'], 'permission:stock_inventories.create')
+                ->middlewareFor('update', 'permission:stock_inventories.update')
+                ->middlewareFor('destroy', 'permission:stock_inventories.delete');
+            Route::post('inventories/{inventory}/start', [StockInventoryController::class, 'start'])->middleware('permission:stock_inventories.start')->name('inventories.start');
+            Route::post('inventories/{inventory}/validate', [StockInventoryController::class, 'finalize'])->middleware('permission:stock_inventories.validate')->name('inventories.validate');
+            Route::post('inventories/{inventory}/cancel', [StockInventoryController::class, 'cancel'])->middleware('permission:stock_inventories.cancel')->name('inventories.cancel');
         });
 
         Route::prefix('purchasing')->name('purchasing.')->group(function () {

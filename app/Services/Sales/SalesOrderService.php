@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Sales;
 
+use App\Models\Inventory\Warehouse;
 use App\Models\Sales\DeliveryNote;
 use App\Models\Sales\Invoice;
 use App\Models\Sales\SalesOrder;
@@ -239,6 +240,7 @@ class SalesOrderService
                 'reference'      => $this->generateDeliveryNoteReference(),
                 'sales_order_id' => $order->id,
                 'customer_id'    => $order->customer_id,
+                'warehouse_id'   => Warehouse::defaultId(),
                 'status'         => 'draft',
                 'date'           => now()->toDateString(),
                 'delivery_address' => $order->delivery_address,

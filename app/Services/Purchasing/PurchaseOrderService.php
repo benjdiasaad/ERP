@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Purchasing;
 
+use App\Models\Inventory\Warehouse;
 use App\Models\Purchasing\PurchaseInvoice;
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\ReceptionNote;
@@ -164,6 +165,7 @@ class PurchaseOrderService
                 'reference'         => $reference,
                 'purchase_order_id' => $order->id,
                 'supplier_id'       => $order->supplier_id,
+                'warehouse_id'      => Warehouse::defaultId(),
                 'status'            => 'draft',
                 'reception_date'    => now()->toDateString(),
                 'created_by'        => auth()->id(),

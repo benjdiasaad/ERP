@@ -31,15 +31,19 @@ class StockInventory extends Model
         'warehouse_id',
         'reference',
         'status',
+        'count_date',
         'counted_at',
         'validated_at',
         'validated_by',
         'notes',
+        'created_by',
+        'updated_by',
     ];
 
     protected function casts(): array
     {
         return [
+            'count_date'   => 'date',
             'counted_at'   => 'datetime',
             'validated_at' => 'datetime',
         ];

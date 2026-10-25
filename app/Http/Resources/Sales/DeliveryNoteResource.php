@@ -19,6 +19,8 @@ class DeliveryNoteResource extends JsonResource
             'customer_id'             => $this->customer_id,
             'customer'                => CustomerResource::make($this->whenLoaded('customer')),
             'status'                  => $this->status,
+            'warehouse_id'        => $this->warehouse_id,
+            'warehouse'           => $this->whenLoaded('warehouse', fn () => $this->warehouse?->only(['id', 'code', 'name'])),
             'date'                    => $this->date?->toDateString(),
             'expected_delivery_date'  => $this->expected_delivery_date?->toDateString(),
             'shipped_at'              => $this->shipped_at?->toDateString(),

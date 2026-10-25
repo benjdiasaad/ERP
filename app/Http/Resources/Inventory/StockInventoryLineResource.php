@@ -15,10 +15,11 @@ class StockInventoryLineResource extends JsonResource
             'id'               => $this->id,
             'stock_inventory_id' => $this->stock_inventory_id,
             'product_id'       => $this->product_id,
-            'product'          => $this->whenLoaded('product'),
-            'theoretical_qty'  => $this->theoretical_qty,
-            'counted_qty'      => $this->counted_qty,
+            'product'          => $this->whenLoaded('product', fn () => $this->product?->only(['id', 'code', 'name', 'unit'])),
+            'theoretical_quantity' => $this->theoretical_quantity,
+            'counted_quantity' => $this->counted_quantity,
             'variance'         => $this->variance,
+            'variance_percentage' => $this->variance_percentage,
             'notes'            => $this->notes,
         ];
     }

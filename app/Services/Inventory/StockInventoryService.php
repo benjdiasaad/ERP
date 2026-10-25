@@ -32,9 +32,11 @@ class StockInventoryService
             $inventory = StockInventory::create([
                 'company_id'   => auth()->user()->current_company_id,
                 'warehouse_id' => $warehouse->id,
-                'reference'    => $data['reference'] ?? null,
+                'reference'    => $data['reference'] ?? $this->generateReference(),
                 'status'       => 'draft',
+                'count_date'   => $data['count_date'] ?? now()->toDateString(),
                 'notes'        => $data['notes'] ?? null,
+                'created_by'   => auth()->id(),
             ]);
 
             // Add lines if provided
@@ -111,6 +113,18 @@ class StockInventoryService
         return (bool) $inventory->restore();
     }
 
+    /**
+     * Next INV-YYYY-NNNNN reference for the current company (deleted ones included, so none is reused).
+     */
+    private function generateReference(): string
+    {
+        $year = now()->format('Y');
+        $last = StockInventory::withTrashed()->where('reference', 'like', "INV-{$year}-%")->orderByDesc('reference')->value('reference');
+        $next = $last ? (int) substr($last, -5) + 1 : 1;
+
+        return sprintf('INV-%s-%05d', $year, $next);
+    }
+
     // ─── Line Management ──────────────────────────────────────────────────────
 
     /**
@@ -155,12 +169,47 @@ class StockInventoryService
             ]);
         }
 
-        $inventory->update([
-            'status'     => 'in_progress',
-            'counted_at' => now(),
-        ]);
+        return DB::transaction(function () use ($inventory): StockInventory {
+            // The book quantities are taken when counting starts.
+            foreach ($inventory->lines as $line) {
+                $line->update([
+                    'theoretical_quantity' => StockLevel::where('product_id', $line->product_id)
+                        ->where('warehouse_id', $line->warehouse_id)->value('quantity_on_hand') ?? 0,
+                ]);
+            }
 
-        return $inventory->fresh(['lines']);
+            $inventory->update([
+                'status'     => 'in_progress',
+                'counted_at' => now(),
+            ]);
+
+            return $inventory->fresh(['lines']);
+        });
+    }
+
+    /**
+     * Record counted quantities while the count is in progress.
+     *
+     * @param array<int, array{id: int, counted_quantity: float, notes?: string|null}> $lines
+     */
+    public function recordCounts(StockInventory $inventory, array $lines): StockInventory
+    {
+        if ($inventory->status !== 'in_progress') {
+            throw ValidationException::withMessages([
+                'status' => "Counts can only be entered while the inventory is in progress. Current status: {$inventory->status}.",
+            ]);
+        }
+
+        return DB::transaction(function () use ($inventory, $lines): StockInventory {
+            foreach ($lines as $data) {
+                $inventory->lines()->whereKey($data['id'])->first()?->update([
+                    'counted_quantity' => $data['counted_quantity'],
+                    'notes'            => $data['notes'] ?? null,
+                ]);
+            }
+
+            return $inventory->fresh(['lines']);
+        });
     }
 
     /**
@@ -192,7 +241,7 @@ class StockInventoryService
                         'reference'    => $inventory->reference,
                         'source_type'  => StockInventory::class,
                         'source_id'    => $inventory->id,
-                        'notes'        => "Physical inventory adjustment: {$line->notes}",
+                        'notes'        => trim("Physical inventory adjustment. {$line->notes}"),
                     ]);
                 }
             }

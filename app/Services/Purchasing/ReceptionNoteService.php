@@ -6,12 +6,15 @@ namespace App\Services\Purchasing;
 
 use App\Models\Purchasing\PurchaseOrder;
 use App\Models\Purchasing\ReceptionNote;
+use App\Services\Inventory\StockMovementService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ReceptionNoteService
 {
+    public function __construct(private readonly StockMovementService $stockMovements) {}
+
     public function create(array $data): ReceptionNote
     {
         return DB::transaction(function () use ($data): ReceptionNote {
@@ -142,6 +145,9 @@ class ReceptionNoteService
                 'confirmed_by' => auth()->id(),
                 'confirmed_at' => now(),
             ]);
+
+            // Received goods enter the note's warehouse.
+            $this->stockMovements->recordForDocument($note, $note->warehouse_id, $note->lines, 'in', 'received_quantity', $note->reference);
 
             return $note->fresh(['lines', 'purchaseOrder', 'supplier']);
         });

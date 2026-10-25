@@ -19,7 +19,8 @@ class StockLevelResource extends JsonResource
             'warehouse'    => $this->whenLoaded('warehouse'),
             'quantity_on_hand' => $this->quantity_on_hand,
             'quantity_reserved' => $this->quantity_reserved,
-            'quantity_available' => $this->quantity_available,
+            'quantity_available' => (string) ((float) $this->quantity_on_hand - (float) $this->quantity_reserved),
+            'last_movement_at' => $this->last_movement_at,
             'created_at'   => $this->created_at?->toISOString(),
             'updated_at'   => $this->updated_at?->toISOString(),
         ];

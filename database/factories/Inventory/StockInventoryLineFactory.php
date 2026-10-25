@@ -21,8 +21,8 @@ class StockInventoryLineFactory extends Factory
         return [
             'stock_inventory_id' => StockInventory::factory(),
             'product_id'         => Product::factory(),
-            'theoretical_qty'    => $theoreticalQty,
-            'counted_qty'        => $countedQty,
+            'theoretical_quantity' => $theoreticalQty,
+            'counted_quantity'   => $countedQty,
             'variance'           => $countedQty - $theoreticalQty,
             'notes'              => $this->faker->optional()->sentence(),
         ];
@@ -31,7 +31,7 @@ class StockInventoryLineFactory extends Factory
     public function withVariance(): static
     {
         return $this->state(fn (array $attributes) => [
-            'variance' => $attributes['counted_qty'] - $attributes['theoretical_qty'],
+            'variance' => $attributes['counted_quantity'] - $attributes['theoretical_quantity'],
         ]);
     }
 }

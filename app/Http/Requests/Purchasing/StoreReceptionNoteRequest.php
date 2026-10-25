@@ -19,6 +19,7 @@ class StoreReceptionNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'warehouse_id'             => ['nullable', 'integer', $this->inCompany('warehouses')],
             'purchase_order_id'              => ['required', 'integer', $this->inCompany('purchase_orders')],
             'supplier_id'                    => ['nullable', 'integer', $this->inCompany('suppliers')],
             'reception_date'                 => ['required', 'date'],

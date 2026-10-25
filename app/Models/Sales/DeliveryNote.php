@@ -11,6 +11,7 @@ use App\Traits\HasAuditTrail;
 use App\Traits\HasStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Inventory\Warehouse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,6 +35,7 @@ class DeliveryNote extends Model
         'reference',
         'sales_order_id',
         'customer_id',
+        'warehouse_id',
         'status',
         'date',
         'expected_delivery_date',
@@ -100,5 +102,10 @@ class DeliveryNote extends Model
     public function scopeByCustomer(Builder $query, int $customerId): Builder
     {
         return $query->where('customer_id', $customerId);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

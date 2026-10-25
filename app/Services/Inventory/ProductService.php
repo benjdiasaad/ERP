@@ -124,11 +124,10 @@ class ProductService
 
     public function generateCode(): string
     {
-        $year  = now()->format('Y');
-        $count = Product::withoutGlobalScopes()
-            ->whereYear('created_at', $year)
-            ->count() + 1;
+        $year = now()->format('Y');
+        $last = Product::withTrashed()->where('code', 'like', "PROD-{$year}-%")->orderByDesc('code')->value('code');
+        $next = $last ? (int) substr($last, -5) + 1 : 1;
 
-        return sprintf('PROD-%s-%05d', $year, $count);
+        return sprintf('PROD-%s-%05d', $year, $next);
     }
 }

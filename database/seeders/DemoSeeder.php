@@ -226,12 +226,8 @@ class DemoSeeder extends Seeder
             ->map(fn ($code, $name) => ProductCategory::create(['name' => $name, 'code' => $code, 'is_active' => true]));
 
         $warehouses = [
-            // The column is is_default, but Warehouse::$fillable lists "default", so set it directly.
-            tap(
-                Warehouse::create(['code' => 'WH-CASA', 'name' => 'Entrepôt Casablanca', 'address' => 'Zone industrielle Ain Sebaâ']),
-                fn (Warehouse $warehouse) => $warehouse->forceFill(['is_default' => true])->save()
-            ),
-            Warehouse::create(['code' => 'WH-TNG', 'name' => 'Entrepôt Tanger', 'address' => 'Zone franche de Tanger']),
+            Warehouse::create(['code' => 'WH-CASA', 'name' => 'Entrepôt Casablanca', 'address' => 'Zone industrielle Ain Sebaâ', 'city' => 'Casablanca', 'is_default' => true]),
+            Warehouse::create(['code' => 'WH-TNG', 'name' => 'Entrepôt Tanger', 'address' => 'Zone franche de Tanger', 'city' => 'Tanger']),
         ];
 
         $products = [];

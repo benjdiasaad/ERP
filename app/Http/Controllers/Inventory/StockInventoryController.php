@@ -73,33 +73,20 @@ class StockInventoryController extends Controller
         return response()->json(null, 204);
     }
 
-    public function complete(StockInventory $stockInventory): JsonResponse|StockInventoryResource
+    public function start(StockInventory $stockInventory): StockInventoryResource
     {
-        $this->authorize('complete', $stockInventory);
+        $this->authorize('start', $stockInventory);
 
-        try {
-            $inventory = $this->stockInventoryService->complete($stockInventory);
-        } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
-        }
-
-        return new StockInventoryResource($inventory);
+        return new StockInventoryResource($this->stockInventoryService->start($stockInventory)->load(['lines.product', 'warehouse']));
     }
 
-    public function cancel(Request $request, StockInventory $stockInventory): JsonResponse|StockInventoryResource
+    /**
+     * Apply the counted quantities: one adjustment movement per line with a variance.
+     */
+    public function validate(StockInventory $stockInventory): StockInventoryResource
     {
-        $this->authorize('cancel', $stockInventory);
+        $this->authorize('validate', $stockInventory);
 
-        $request->validate([
-            'cancellation_reason' => ['nullable', 'string'],
-        ]);
-
-        try {
-            $inventory = $this->stockInventoryService->cancel($stockInventory, $request->cancellation_reason);
-        } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
-        }
-
-        return new StockInventoryResource($inventory);
+        return new StockInventoryResource($this->stockInventoryService->validate($stockInventory)->load(['lines.product', 'warehouse']));
     }
 }

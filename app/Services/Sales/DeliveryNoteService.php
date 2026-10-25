@@ -6,6 +6,7 @@ namespace App\Services\Sales;
 
 use App\Models\Sales\DeliveryNote;
 use App\Models\Sales\SalesOrder;
+use App\Services\Inventory\StockMovementService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 class DeliveryNoteService
 {
     // ─── CRUD ─────────────────────────────────────────────────────────────────
+
+    public function __construct(private readonly StockMovementService $stockMovements) {}
 
     public function create(array $data): DeliveryNote
     {
@@ -118,15 +121,20 @@ class DeliveryNoteService
             ]);
         }
 
-        $deliveryNote->update([
-            'status'          => 'shipped',
-            'shipped_at'      => $data['shipped_at'] ?? now()->toDateString(),
-            'carrier'         => $data['carrier'] ?? $deliveryNote->carrier,
-            'tracking_number' => $data['tracking_number'] ?? $deliveryNote->tracking_number,
-            'shipped_by'      => auth()->id(),
-        ]);
+        return DB::transaction(function () use ($deliveryNote, $data): DeliveryNote {
+            $deliveryNote->update([
+                'status'          => 'shipped',
+                'shipped_at'      => $data['shipped_at'] ?? now()->toDateString(),
+                'carrier'         => $data['carrier'] ?? $deliveryNote->carrier,
+                'tracking_number' => $data['tracking_number'] ?? $deliveryNote->tracking_number,
+                'shipped_by'      => auth()->id(),
+            ]);
 
-        return $deliveryNote->fresh(['lines', 'customer', 'salesOrder']);
+            // Shipped goods leave the note's warehouse (refused if stock is insufficient).
+            $this->stockMovements->recordForDocument($deliveryNote, $deliveryNote->warehouse_id, $deliveryNote->lines, 'out', 'shipped_quantity', $deliveryNote->reference);
+
+            return $deliveryNote->fresh(['lines', 'customer', 'salesOrder']);
+        });
     }
 
     /**
@@ -223,6 +231,9 @@ class DeliveryNoteService
                     'delivered_quantity' => $newDeliveredQty,
                 ]);
             }
+
+            // Returned goods go back into the warehouse they were shipped from.
+            $this->stockMovements->recordForDocument($deliveryNote, $deliveryNote->warehouse_id, $deliveryNote->lines, 'return', 'shipped_quantity', $deliveryNote->reference);
 
             return $deliveryNote->fresh(['lines', 'customer', 'salesOrder']);
         });

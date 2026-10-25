@@ -19,6 +19,7 @@ class UpdateReceptionNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'warehouse_id'             => ['nullable', 'integer', $this->inCompany('warehouses')],
             'reception_date'                 => ['sometimes', 'date'],
             'notes'                          => ['nullable', 'string'],
             'lines'                          => ['sometimes', 'array', 'min:1'],

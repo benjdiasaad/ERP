@@ -64,6 +64,12 @@ export const labels = {
     },
     deliveryStatus: { draft: 'Brouillon', ready: 'Prêt à expédier', shipped: 'Expédié', delivered: 'Livré', returned: 'Retourné' },
     creditNoteStatus: { draft: 'Brouillon', confirmed: 'Confirmé', applied: 'Imputé' },
+    productType: { product: 'Produit', service: 'Service', consumable: 'Consommable' },
+    movementType: { in: 'Entrée', out: 'Sortie', transfer: 'Transfert', adjustment: 'Ajustement', return: 'Retour', initial: 'Stock initial' },
+    inventoryStatus: { draft: 'Brouillon', in_progress: 'Comptage en cours', validated: 'Validé', completed: 'Validé', cancelled: 'Annulé' },
+    movementSource: {
+        ReceptionNote: 'Réception', DeliveryNote: 'Livraison', StockInventory: 'Inventaire', transfer: 'Transfert',
+    },
     paymentMethod: { bank_transfer: 'Virement', check: 'Chèque', cash: 'Espèces', credit_card: 'Carte bancaire', mobile: 'Paiement mobile' },
     eventType: {
         meeting: 'Réunion', conference: 'Conférence', training: 'Formation',
@@ -85,6 +91,8 @@ export const variants = {
     invoiceStatus: { draft: 'outline', sent: 'secondary', partial: 'secondary', paid: 'default', overdue: 'destructive', cancelled: 'outline' },
     deliveryStatus: { draft: 'outline', ready: 'secondary', shipped: 'secondary', delivered: 'default', returned: 'destructive' },
     creditNoteStatus: { draft: 'outline', confirmed: 'secondary', applied: 'default' },
+    movementType: { in: 'default', return: 'default', out: 'destructive', transfer: 'secondary', adjustment: 'outline', initial: 'outline' },
+    inventoryStatus: { draft: 'outline', in_progress: 'secondary', validated: 'default', completed: 'default', cancelled: 'destructive' },
 };
 
 export const variant = (group, value) => variants[group]?.[value] ?? 'secondary';

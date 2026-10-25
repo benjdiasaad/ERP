@@ -11,6 +11,7 @@ use Database\Factories\Purchasing\ReceptionNoteFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Inventory\Warehouse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,7 @@ class ReceptionNote extends Model
         'reference',
         'purchase_order_id',
         'supplier_id',
+        'warehouse_id',
         'status',
         'reception_date',
         'notes',
@@ -87,5 +89,10 @@ class ReceptionNote extends Model
     public function scopeByStatus(Builder $query, string $status): Builder
     {
         return $query->where('status', $status);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

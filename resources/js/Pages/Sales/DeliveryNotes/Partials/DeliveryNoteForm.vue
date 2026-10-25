@@ -13,6 +13,7 @@ const props = defineProps({
     form: { type: Object, required: true },
     customers: { type: Array, required: true },
     products: { type: Array, required: true },
+    warehouses: { type: Array, default: () => [] },
     submitLabel: { type: String, required: true },
     cancelHref: { type: String, required: true },
 });
@@ -51,6 +52,8 @@ const lineError = (index, field) => props.form.errors[`lines.${index}.${field}`]
                 <FormField id="delivery_address" v-model="form.delivery_address" label="Adresse de livraison" class="sm:col-span-2 lg:col-span-3" :error="form.errors.delivery_address" />
                 <FormField id="carrier" v-model="form.carrier" label="Transporteur" :error="form.errors.carrier" />
                 <FormField id="tracking_number" v-model="form.tracking_number" label="N° de suivi" :error="form.errors.tracking_number" />
+                <FormField id="warehouse_id" v-model="form.warehouse_id" label="Entrepôt d'expédition" :options="warehouses"
+                    placeholder="Aucun (stock non suivi)" :error="form.errors.warehouse_id" />
             </CardContent>
         </Card>
 

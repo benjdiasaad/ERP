@@ -4,6 +4,7 @@ import { Link, router, useForm } from '@inertiajs/vue3';
 import { Ban, CircleCheck, Save, Trash2 } from '@lucide/vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import FormField from '@/components/FormField.vue';
 import ReasonDialog from '@/components/ReasonDialog.vue';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -20,6 +21,7 @@ import { formatDate, formatDateTime, label, variant } from '@/composables/format
 
 const props = defineProps({
     note: { type: Object, required: true },
+    warehouses: { type: Array, default: () => [] },
 });
 
 const { can } = usePermissions();
@@ -38,8 +40,8 @@ const toForm = (lines) => lines.map((l) => ({
     rejected_quantity: Number(l.rejected_quantity ?? 0),
     unit: l.unit,
 }));
-const form = useForm({ lines: toForm(n.value.lines) });
-watch(() => n.value.lines, (lines) => form.defaults({ lines: toForm(lines) }).reset());
+const form = useForm({ warehouse_id: n.value.warehouse_id, lines: toForm(n.value.lines) });
+watch(() => n.value, (note) => form.defaults({ warehouse_id: note.warehouse_id, lines: toForm(note.lines) }).reset());
 
 const save = () => form.put(route('purchasing.receptions.update', n.value.id), { preserveScroll: true });
 
@@ -136,6 +138,9 @@ const lineError = (index, field) => form.errors[`lines.${index}.${field}`];
                                 <dd><Link :href="route('purchasing.orders.show', n.purchase_order.id)" class="hover:underline">{{ n.purchase_order.reference }}</Link></dd>
                             </div>
                             <div><dt class="text-muted-foreground">Date de réception</dt><dd>{{ formatDate(n.reception_date) }}</dd></div>
+                            <FormField v-if="editable" id="warehouse_id" v-model="form.warehouse_id" label="Entrepôt de réception" :options="warehouses"
+                                placeholder="Aucun (stock non suivi)" :error="form.errors.warehouse_id" />
+                            <div v-else><dt class="text-muted-foreground">Entrepôt de réception</dt><dd>{{ n.warehouse?.name ?? 'Aucun (stock non suivi)' }}</dd></div>
                             <div v-if="n.notes"><dt class="text-muted-foreground">Notes</dt><dd class="whitespace-pre-line">{{ n.notes }}</dd></div>
                         </dl>
                     </CardContent>

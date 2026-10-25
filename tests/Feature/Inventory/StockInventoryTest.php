@@ -484,6 +484,9 @@ class StockInventoryTest extends TestCase
         $responseA = $this->withHeaders($this->authHeaders($userA))
             ->getJson('/api/stock-inventories');
 
+        // The test client keeps the first authenticated user; reset it for user B.
+        $this->app['auth']->forgetGuards();
+
         $responseB = $this->withHeaders($this->authHeaders($userB))
             ->getJson('/api/stock-inventories');
 

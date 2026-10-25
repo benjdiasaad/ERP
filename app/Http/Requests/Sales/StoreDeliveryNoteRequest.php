@@ -19,6 +19,7 @@ class StoreDeliveryNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'warehouse_id'             => ['nullable', 'integer', $this->inCompany('warehouses')],
             'sales_order_id'           => ['nullable', 'integer', $this->inCompany('sales_orders')],
             'customer_id'              => ['required', 'integer', $this->inCompany('customers')],
             'date'                     => ['nullable', 'date'],

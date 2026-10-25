@@ -33,7 +33,20 @@ class StockInventoryLine extends Model
         return [
             'theoretical_quantity' => 'decimal:4',
             'counted_quantity'     => 'decimal:4',
+            'variance'             => 'decimal:2',
+            'variance_percentage'  => 'decimal:2',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Stored variance is derived from the two quantities.
+        static::saving(function (self $line): void {
+            $theoretical = (float) $line->theoretical_quantity;
+            $variance = (float) $line->counted_quantity - $theoretical;
+            $line->variance = round($variance, 2);
+            $line->variance_percentage = $theoretical != 0.0 ? round(max(-999999, min(999999, $variance / $theoretical * 100)), 2) : 0;
+        });
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────

@@ -430,6 +430,9 @@ class StockMovementTest extends TestCase
                 'quantity'     => 100,
             ]);
 
+        // The test client keeps the first authenticated user; reset it for user B.
+        $this->app['auth']->forgetGuards();
+
         $this->withHeaders($this->authHeaders($userB))
             ->postJson('/api/stock-movements', [
                 'product_id'   => $productB->id,
@@ -438,8 +441,9 @@ class StockMovementTest extends TestCase
                 'quantity'     => 200,
             ]);
 
-        $movementsA = StockMovement::where('company_id', $companyA->id)->get();
-        $movementsB = StockMovement::where('company_id', $companyB->id)->get();
+        // Count per company without the logged-in user's company scope.
+        $movementsA = StockMovement::withoutGlobalScopes()->where('company_id', $companyA->id)->get();
+        $movementsB = StockMovement::withoutGlobalScopes()->where('company_id', $companyB->id)->get();
 
         $this->assertCount(1, $movementsA);
         $this->assertCount(1, $movementsB);

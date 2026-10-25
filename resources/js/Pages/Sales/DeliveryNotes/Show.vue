@@ -133,6 +133,12 @@ const destroy = () => router.delete(route('sales.delivery-notes.destroy', n.valu
                             </div>
                             <div><dt class="text-muted-foreground">Adresse de livraison</dt><dd class="whitespace-pre-line">{{ n.delivery_address ?? '—' }}</dd></div>
                             <div><dt class="text-muted-foreground">Livraison prévue</dt><dd>{{ formatDate(n.expected_delivery_date) }}</dd></div>
+                            <div><dt class="text-muted-foreground">Entrepôt d'expédition</dt>
+                                <dd>
+                                    <Link v-if="n.warehouse && can('warehouses.view')" :href="route('stock.warehouses.show', n.warehouse.id)" class="hover:underline">{{ n.warehouse.name }}</Link>
+                                    <span v-else>{{ n.warehouse?.name ?? 'Aucun (stock non suivi)' }}</span>
+                                </dd>
+                            </div>
                             <div><dt class="text-muted-foreground">Transporteur</dt><dd>{{ n.carrier ?? '—' }}</dd></div>
                             <div><dt class="text-muted-foreground">N° de suivi</dt><dd class="break-all">{{ n.tracking_number ?? '—' }}</dd></div>
                         </dl>

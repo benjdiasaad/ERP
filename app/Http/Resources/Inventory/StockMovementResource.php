@@ -23,7 +23,7 @@ class StockMovementResource extends JsonResource
             'source_type'   => $this->source_type,
             'source_id'     => $this->source_id,
             'notes'         => $this->notes,
-            'movement_date' => $this->movement_date?->toDateString(),
+            'source_label'  => $this->source_type ? class_basename($this->source_type) : null,
             'created_at'    => $this->created_at?->toISOString(),
             'updated_at'    => $this->updated_at?->toISOString(),
         ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web\Purchasing;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Web\Inventory\Concerns\ProvidesStockOptions;
 use App\Http\Requests\Purchasing\UpdateReceptionNoteRequest;
 use App\Http\Resources\Purchasing\ReceptionNoteResource;
 use App\Models\Purchasing\ReceptionNote;
@@ -20,6 +21,8 @@ use Inertia\Response;
  */
 class ReceptionNoteController extends Controller
 {
+    use ProvidesStockOptions;
+
     public const STATUSES = ['draft', 'confirmed', 'cancelled'];
 
     public function __construct(
@@ -61,10 +64,11 @@ class ReceptionNoteController extends Controller
     {
         $this->authorize('view', $receptionNote);
 
-        $receptionNote->load(['supplier', 'purchaseOrder:id,reference,status', 'lines']);
+        $receptionNote->load(['supplier', 'purchaseOrder:id,reference,status', 'lines', 'warehouse:id,code,name']);
 
         return Inertia::render('Purchasing/Receptions/Show', [
-            'note' => new ReceptionNoteResource($receptionNote),
+            'note'       => new ReceptionNoteResource($receptionNote),
+            'warehouses' => $receptionNote->status === 'draft' ? $this->warehouseOptions() : [],
         ]);
     }
 

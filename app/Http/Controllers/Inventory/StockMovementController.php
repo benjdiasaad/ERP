@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreStockMovementRequest;
-use App\Http\Requests\Inventory\UpdateStockMovementRequest;
+use App\Http\Requests\Inventory\TransferStockRequest;
 use App\Http\Resources\Inventory\StockMovementResource;
 use App\Models\Inventory\StockMovement;
 use App\Services\Inventory\StockMovementService;
@@ -39,9 +39,9 @@ class StockMovementController extends Controller
     {
         $this->authorize('create', StockMovement::class);
 
-        $movement = $this->stockMovementService->create($request->validated());
+        $movement = $this->stockMovementService->createMovement($request->validated());
 
-        return (new StockMovementResource($movement))
+        return (new StockMovementResource($movement->load(['product', 'warehouse'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -55,21 +55,44 @@ class StockMovementController extends Controller
         return new StockMovementResource($stockMovement);
     }
 
-    public function update(UpdateStockMovementRequest $request, StockMovement $stockMovement): StockMovementResource
+    /**
+     * Move stock between two warehouses of the company (one "out" and one "in" movement).
+     */
+    public function transfer(TransferStockRequest $request): JsonResponse
     {
-        $this->authorize('update', $stockMovement);
+        $this->authorize('transfer', StockMovement::class);
 
-        $movement = $this->stockMovementService->update($stockMovement, $request->validated());
+        ['out_movement' => $out, 'in_movement' => $in] = $this->stockMovementService->transfer($request->validated());
 
-        return new StockMovementResource($movement);
+        return response()->json([
+            'out_movement' => new StockMovementResource($out),
+            'in_movement'  => new StockMovementResource($in),
+        ], 201);
     }
 
-    public function destroy(StockMovement $stockMovement): JsonResponse
+    /**
+     * Quantities moved per type over a period (default: current month).
+     */
+    public function report(Request $request): JsonResponse
     {
-        $this->authorize('delete', $stockMovement);
+        $this->authorize('viewAny', StockMovement::class);
 
-        $this->stockMovementService->delete($stockMovement);
+        $data = $request->validate([
+            'from'         => ['nullable', 'date'],
+            'to'           => ['nullable', 'date', 'after_or_equal:from'],
+            'warehouse_id' => ['nullable', 'integer'],
+        ]);
+        $from = $data['from'] ?? now()->startOfMonth()->toDateString();
+        $to = $data['to'] ?? now()->toDateString();
 
-        return response()->json(null, 204);
+        $rows = StockMovement::query()
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
+            ->when($data['warehouse_id'] ?? null, fn ($q, $id) => $q->where('warehouse_id', $id))
+            ->selectRaw('type, COUNT(*) as movements, SUM(ABS(quantity)) as quantity')
+            ->groupBy('type')
+            ->get();
+
+        return response()->json(['data' => ['from' => $from, 'to' => $to, 'by_type' => $rows]]);
     }
 }

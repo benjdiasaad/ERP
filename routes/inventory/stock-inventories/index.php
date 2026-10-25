@@ -15,8 +15,8 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
     
     Route::middleware('permission:stock_inventories.delete')->delete('stock-inventories/{stockInventory}', [StockInventoryController::class, 'destroy'])->name('stock-inventories.destroy');
     
-    Route::middleware('permission:stock_inventories.create')->post('stock-inventories/{stockInventory}/start', [StockInventoryController::class, 'start'])->name('stock-inventories.start');
+    Route::middleware('permission:stock_inventories.start')->post('stock-inventories/{stockInventory}/start', [StockInventoryController::class, 'start'])->name('stock-inventories.start');
     
-    Route::middleware('permission:stock_inventories.update')->post('stock-inventories/{stockInventory}/validate', [StockInventoryController::class, 'validate'])->name('stock-inventories.validate');
+    Route::middleware('permission:stock_inventories.validate')->post('stock-inventories/{stockInventory}/validate', [StockInventoryController::class, 'validate'])->name('stock-inventories.validate');
 
 });

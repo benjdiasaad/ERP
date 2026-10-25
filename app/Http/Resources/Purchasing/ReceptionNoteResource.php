@@ -19,6 +19,8 @@ class ReceptionNoteResource extends JsonResource
             'supplier_id'         => $this->supplier_id,
             'supplier'            => $this->whenLoaded('supplier'),
             'status'              => $this->status,
+            'warehouse_id'        => $this->warehouse_id,
+            'warehouse'           => $this->whenLoaded('warehouse', fn () => $this->warehouse?->only(['id', 'code', 'name'])),
             'reception_date'      => $this->reception_date?->toDateString(),
             'notes'               => $this->notes,
             'confirmed_by'        => $this->confirmed_by,

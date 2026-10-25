@@ -8,6 +8,7 @@ use App\Models\Inventory\Product;
 use App\Models\Inventory\StockLevel;
 use App\Models\Inventory\StockMovement;
 use App\Models\Inventory\Warehouse;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -40,8 +41,8 @@ class StockMovementService
             $type = $data['type'];
             $quantity = (float) $data['quantity'];
 
-            // Validate quantity
-            if ($quantity <= 0) {
+            // Validate quantity (an adjustment may set the stock to zero)
+            if ($quantity < 0 || ($quantity == 0 && $type !== 'adjustment')) {
                 throw ValidationException::withMessages([
                     'quantity' => 'Quantity must be greater than zero.',
                 ]);
@@ -155,6 +156,40 @@ class StockMovementService
         });
     }
 
+    /**
+     * Record one movement per stockable product line of a document (reception,
+     * delivery, return). Does nothing when the document has no warehouse.
+     *
+     * @param iterable<\Illuminate\Database\Eloquent\Model> $lines lines with product_id
+     */
+    public function recordForDocument(Model $source, ?int $warehouseId, iterable $lines, string $type, string $quantityField, ?string $reference = null): void
+    {
+        if (!$warehouseId) {
+            return;
+        }
+
+        foreach ($lines as $line) {
+            $quantity = (float) $line->{$quantityField};
+            if (!$line->product_id || $quantity <= 0) {
+                continue;
+            }
+
+            if (!Product::whereKey($line->product_id)->where('is_stockable', true)->exists()) {
+                continue;
+            }
+
+            $this->createMovement([
+                'product_id'   => $line->product_id,
+                'warehouse_id' => $warehouseId,
+                'type'         => $type,
+                'quantity'     => $quantity,
+                'reference'    => $reference,
+                'source_type'  => $source::class,
+                'source_id'    => $source->getKey(),
+            ]);
+        }
+    }
+
     // ─── Stock Level Updates ──────────────────────────────────────────────────
 
     /**
@@ -190,9 +225,13 @@ class StockMovementService
             ]);
         }
 
+        $onHand = max(0, $newQty);
+
         $stockLevel->update([
-            'quantity_on_hand' => max(0, $newQty),
-            'last_counted_at'  => now(),
+            'quantity_on_hand'   => $onHand,
+            'quantity_available' => $onHand - (float) $stockLevel->quantity_reserved,
+            'last_movement_at'   => now(),
+            'last_counted_at'    => $type === 'adjustment' ? now() : $stockLevel->last_counted_at,
         ]);
     }
 

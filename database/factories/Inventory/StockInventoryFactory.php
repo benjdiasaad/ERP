@@ -23,7 +23,7 @@ class StockInventoryFactory extends Factory
             'company_id'   => Company::factory(),
             'warehouse_id' => Warehouse::factory(),
             'reference'    => sprintf('INV-%s-%05d', $year, $seq),
-            'inventory_date' => now()->toDateString(),
+            'count_date'   => now()->toDateString(),
             'status'       => 'draft',
             'notes'        => $this->faker->optional()->sentence(),
             'created_by'   => User::factory(),
