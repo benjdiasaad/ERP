@@ -8,7 +8,9 @@ use App\Http\Controllers\Web\CRM\LeadController;
 use App\Http\Controllers\Web\CRM\OpportunityController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\Sales\CustomerController;
+use App\Http\Controllers\Web\Sales\InvoiceController;
 use App\Http\Controllers\Web\Sales\QuoteController;
+use App\Http\Controllers\Web\Sales\SalesOrderController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -82,6 +84,41 @@ Route::middleware('auth')->group(function () {
                 Route::post("quotes/{quote}/{$action}", [QuoteController::class, $action])
                     ->middleware("permission:quotes.{$action}")
                     ->name("quotes.{$action}");
+            }
+
+            Route::resource('orders', SalesOrderController::class)
+                ->parameters(['orders' => 'order'])
+                ->middlewareFor('index', 'permission:sales_orders.view_any')
+                ->middlewareFor('show', 'permission:sales_orders.view')
+                ->middlewareFor(['create', 'store'], 'permission:sales_orders.create')
+                ->middlewareFor(['edit', 'update'], 'permission:sales_orders.update')
+                ->middlewareFor('destroy', 'permission:sales_orders.delete');
+            foreach ([
+                'confirm'                => 'confirm',
+                'cancel'                 => 'cancel',
+                'generate-invoice'       => 'generate_invoice',
+                'generate-delivery-note' => 'generate_delivery_note',
+            ] as $uri => $permission) {
+                Route::post("orders/{order}/{$uri}", [SalesOrderController::class, str($uri)->camel()->toString()])
+                    ->middleware("permission:sales_orders.{$permission}")
+                    ->name("orders.{$uri}");
+            }
+
+            Route::resource('invoices', InvoiceController::class)
+                ->middlewareFor('index', 'permission:invoices.view_any')
+                ->middlewareFor('show', 'permission:invoices.view')
+                ->middlewareFor(['create', 'store'], 'permission:invoices.create')
+                ->middlewareFor(['edit', 'update'], 'permission:invoices.update')
+                ->middlewareFor('destroy', 'permission:invoices.delete');
+            foreach ([
+                'send'               => 'send',
+                'cancel'             => 'cancel',
+                'record-payment'     => 'record_payment',
+                'create-credit-note' => 'create_credit_note',
+            ] as $uri => $permission) {
+                Route::post("invoices/{invoice}/{$uri}", [InvoiceController::class, str($uri)->camel()->toString()])
+                    ->middleware("permission:invoices.{$permission}")
+                    ->name("invoices.{$uri}");
             }
         });
     });

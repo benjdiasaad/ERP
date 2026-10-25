@@ -8,11 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\StoreQuoteRequest;
 use App\Http\Requests\Sales\UpdateQuoteRequest;
 use App\Http\Resources\Sales\QuoteResource;
-use App\Models\Finance\Currency;
-use App\Models\Finance\PaymentTerm;
-use App\Models\Finance\Tax;
-use App\Models\Inventory\Product;
-use App\Models\Sales\Customer;
+use App\Http\Controllers\Web\Sales\Concerns\ProvidesDocumentOptions;
 use App\Models\Sales\Quote;
 use App\Services\Sales\QuoteService;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +19,8 @@ use Inertia\Response;
 
 class QuoteController extends Controller
 {
+    use ProvidesDocumentOptions;
+
     public const STATUSES = ['draft', 'sent', 'accepted', 'rejected', 'expired', 'converted'];
 
     public function __construct(
@@ -69,12 +67,12 @@ class QuoteController extends Controller
         $this->authorize('create', Quote::class);
 
         return Inertia::render('Sales/Quotes/Create', [
-            ...$this->formOptions(),
+            ...$this->documentOptions(),
             'defaults' => [
                 'customer_id'   => $request->integer('customer_id') ?: null,
                 'date'          => now()->toDateString(),
                 'validity_date' => now()->addDays(30)->toDateString(),
-                'currency_id'   => Currency::where('code', 'MAD')->value('id'),
+                'currency_id'   => $this->defaultCurrencyId(),
             ],
         ]);
     }
@@ -110,7 +108,7 @@ class QuoteController extends Controller
 
         return Inertia::render('Sales/Quotes/Edit', [
             'quote' => new QuoteResource($quote),
-            ...$this->formOptions(),
+            ...$this->documentOptions(),
         ]);
     }
 
@@ -191,29 +189,5 @@ class QuoteController extends Controller
                 'status' => 'Seuls les devis en brouillon peuvent être modifiés. Dupliquez-le pour en créer une nouvelle version.',
             ]);
         }
-    }
-
-    private function formOptions(): array
-    {
-        return [
-            'customers'    => Customer::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'payment_terms_id'])
-                ->map(fn (Customer $c) => ['value' => $c->id, 'label' => "{$c->name} ({$c->code})", 'payment_term_id' => $c->payment_terms_id]),
-            'products'     => Product::where('is_active', true)->where('is_sellable', true)->orderBy('name')
-                ->get(['id', 'code', 'name', 'sale_price', 'tax_rate', 'unit'])
-                ->map(fn (Product $p) => [
-                    'value'      => $p->id,
-                    'label'      => "{$p->code} · {$p->name}",
-                    'name'       => $p->name,
-                    'sale_price' => (float) $p->sale_price,
-                    'tax_rate'   => (float) $p->tax_rate,
-                    'unit'       => $p->unit,
-                ]),
-            'taxes'        => Tax::where('is_active', true)->orderByDesc('rate')->get(['id', 'name', 'rate'])
-                ->map(fn (Tax $t) => ['value' => $t->id, 'label' => $t->name, 'rate' => (float) $t->rate]),
-            'paymentTerms' => PaymentTerm::where('is_active', true)->orderBy('days')->get(['id', 'name'])
-                ->map(fn (PaymentTerm $t) => ['value' => $t->id, 'label' => $t->name]),
-            'currencies'   => Currency::orderBy('code')->get(['id', 'code'])
-                ->map(fn (Currency $c) => ['value' => $c->id, 'label' => $c->code]),
-        ];
     }
 }

@@ -190,7 +190,7 @@ class InvoiceService
                 'reference'   => $this->generateCreditNoteReference(),
                 'status'      => 'draft',
                 'reason'      => $data['reason'] ?? null,
-                'note_date'   => $data['note_date'] ?? now()->toDateString(),
+                'date'        => $data['note_date'] ?? now()->toDateString(),
                 'currency_id' => $invoice->currency_id,
                 'subtotal_ht'    => 0,
                 'total_discount' => 0,
@@ -315,6 +315,9 @@ class InvoiceService
         $totalTtc  = $subtotalHtAfterDiscount + $taxAmount;
 
         return array_merge($lineData, [
+            // Normalised so lines copied into credit notes (NOT NULL columns) stay valid.
+            'discount_type'              => $discountType,
+            'discount_value'             => $discountValue,
             'subtotal_ht'                => round($subtotalHt, 2),
             'discount_amount'            => round($discountAmount, 2),
             'subtotal_ht_after_discount' => round($subtotalHtAfterDiscount, 2),

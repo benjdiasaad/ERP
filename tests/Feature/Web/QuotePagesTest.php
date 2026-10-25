@@ -67,7 +67,7 @@ class QuotePagesTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Sales/Quotes/Create')->where('defaults.customer_id', $customer->id));
 
         $this->actingAs($user)->post('/sales/quotes', $this->quotePayload($customer))
-            ->assertRedirect()->assertSessionHasNoErrors();
+            ->assertRedirect()->assertRedirect()->assertSessionHasNoErrors();
 
         // 2×1000 −10 % = 1800 + 500 = 2300 HT, TVA 460, TTC 2760
         $quote = Quote::where('customer_id', $customer->id)->firstOrFail();
@@ -111,10 +111,10 @@ class QuotePagesTest extends TestCase
         ]);
         $quote = $this->draftQuote($company);
 
-        $this->actingAs($user)->post("/sales/quotes/{$quote->id}/send")->assertSessionHasNoErrors();
+        $this->actingAs($user)->post("/sales/quotes/{$quote->id}/send")->assertRedirect()->assertSessionHasNoErrors();
         $this->assertEquals('sent', $quote->fresh()->status);
 
-        $this->actingAs($user)->post("/sales/quotes/{$quote->id}/accept")->assertSessionHasNoErrors();
+        $this->actingAs($user)->post("/sales/quotes/{$quote->id}/accept")->assertRedirect()->assertSessionHasNoErrors();
         $this->assertEquals('accepted', $quote->fresh()->status);
 
         $this->actingAs($user)->post("/sales/quotes/{$quote->id}/convert")->assertSessionHasNoErrors()->assertSessionHas('success');
@@ -134,7 +134,7 @@ class QuotePagesTest extends TestCase
         $this->actingAs($user)->post("/sales/quotes/{$quote->id}/accept")->assertSessionHasErrors('status');
 
         $quote->update(['status' => 'sent']);
-        $this->actingAs($user)->post("/sales/quotes/{$quote->id}/reject", ['reason' => 'Trop cher'])->assertSessionHasNoErrors();
+        $this->actingAs($user)->post("/sales/quotes/{$quote->id}/reject", ['reason' => 'Trop cher'])->assertRedirect()->assertSessionHasNoErrors();
 
         $this->assertEquals('rejected', $quote->fresh()->status);
         $this->assertEquals('Trop cher', $quote->fresh()->rejection_reason);

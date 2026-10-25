@@ -1,10 +1,12 @@
 <script setup>
 import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
-import { Check, Copy, PackageCheck, Pencil, Send, Trash2 } from '@lucide/vue';
+import { Check, Copy, PackageCheck, Pencil, Send, Trash2, X } from '@lucide/vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
-import RejectDialog from './Partials/RejectDialog.vue';
+import ReasonDialog from '@/components/ReasonDialog.vue';
+import DocumentLinesTable from '@/components/sales/DocumentLinesTable.vue';
+import StatusTimeline from '@/components/sales/StatusTimeline.vue';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
     AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -12,11 +14,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAction } from '@/composables/useAction';
 import { usePermissions } from '@/composables/usePermissions';
-import { formatDate, formatDateTime, formatMoney, label, variant } from '@/composables/format';
+import { formatDate, formatMoney, label, variant } from '@/composables/format';
 
 const props = defineProps({
     quote: { type: Object, required: true },
@@ -49,7 +49,11 @@ const destroy = () => router.delete(route('sales.quotes.destroy', q.value.id));
             <template #actions>
                 <Button v-if="status === 'draft' && can('quotes.send')" :disabled="processing" @click="act('send')"><Send /> Marquer envoyé</Button>
                 <Button v-if="status === 'sent' && can('quotes.accept')" :disabled="processing" @click="act('accept')"><Check /> Accepté</Button>
-                <RejectDialog v-if="status === 'sent' && can('quotes.reject')" :quote="q" />
+                <ReasonDialog v-if="status === 'sent' && can('quotes.reject')" :url="route('sales.quotes.reject', q.id)"
+                    title="Le client a refusé le devis" :description="`${q.reference} · ${q.customer?.name ?? ''}`"
+                    confirm-label="Confirmer le refus" placeholder="Ex. : prix trop élevé, délai trop long">
+                    <X /> Refusé
+                </ReasonDialog>
                 <Button v-if="status === 'accepted' && can('quotes.convert')" :disabled="processing" @click="act('convert')">
                     <PackageCheck /> Convertir en commande
                 </Button>
@@ -77,43 +81,7 @@ const destroy = () => router.delete(route('sales.quotes.destroy', q.value.id));
 
         <div class="grid gap-4 lg:grid-cols-3">
             <div class="grid min-w-0 content-start gap-4 lg:col-span-2">
-                <Card class="gap-4">
-                    <CardHeader><CardTitle>Lignes</CardTitle></CardHeader>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead class="pl-6">Description</TableHead>
-                                <TableHead class="text-right">Qté</TableHead>
-                                <TableHead class="hidden text-right sm:table-cell">P.U. HT</TableHead>
-                                <TableHead class="hidden text-right md:table-cell">Remise</TableHead>
-                                <TableHead class="hidden text-right md:table-cell">TVA</TableHead>
-                                <TableHead class="pr-6 text-right">Total TTC</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="line in q.lines" :key="line.id">
-                                <TableCell class="max-w-72 pl-6 whitespace-normal">
-                                    <p class="font-medium">{{ line.description }}</p>
-                                    <p v-if="line.product" class="text-xs text-muted-foreground">{{ line.product.code }}</p>
-                                </TableCell>
-                                <TableCell class="text-right tabular-nums">{{ Number(line.quantity) }}</TableCell>
-                                <TableCell class="hidden text-right tabular-nums sm:table-cell">{{ formatMoney(line.unit_price_ht) }}</TableCell>
-                                <TableCell class="hidden text-right tabular-nums md:table-cell">{{ Number(line.discount_value) ? `${Number(line.discount_value)} %` : '—' }}</TableCell>
-                                <TableCell class="hidden text-right tabular-nums md:table-cell">{{ Number(line.tax_rate) }} %</TableCell>
-                                <TableCell class="pr-6 text-right font-medium tabular-nums">{{ formatMoney(line.total_ttc) }}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <CardContent>
-                        <Separator class="mb-4" />
-                        <dl class="ml-auto grid w-full max-w-xs gap-1.5 text-sm">
-                            <div class="flex justify-between"><dt class="text-muted-foreground">Sous-total HT</dt><dd class="tabular-nums">{{ formatMoney(q.subtotal_ht) }}</dd></div>
-                            <div v-if="Number(q.total_discount)" class="flex justify-between"><dt class="text-muted-foreground">Remises</dt><dd class="tabular-nums">− {{ formatMoney(q.total_discount) }}</dd></div>
-                            <div class="flex justify-between"><dt class="text-muted-foreground">TVA</dt><dd class="tabular-nums">{{ formatMoney(q.total_tax) }}</dd></div>
-                            <div class="flex justify-between border-t pt-1.5 text-base font-semibold"><dt>Total TTC</dt><dd class="tabular-nums">{{ formatMoney(q.total_ttc) }}</dd></div>
-                        </dl>
-                    </CardContent>
-                </Card>
+                <DocumentLinesTable :document="q" />
 
                 <Card v-if="q.notes">
                     <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
@@ -129,19 +97,13 @@ const destroy = () => router.delete(route('sales.quotes.destroy', q.value.id));
                             <Badge :variant="variant('quoteStatus', status)">{{ label('quoteStatus', status) }}</Badge>
                             <Badge v-if="isExpired" variant="destructive">Validité dépassée</Badge>
                         </div>
-                        <ol class="grid gap-3">
-                            <li v-for="step in timeline" :key="step.label" class="flex items-start gap-3">
-                                <span class="mt-1 size-2.5 shrink-0 rounded-full"
-                                    :class="step.failed ? 'bg-destructive' : step.done ? 'bg-primary' : 'border bg-background'" />
-                                <div>
-                                    <p :class="step.done ? 'font-medium' : 'text-muted-foreground'">{{ step.label }}</p>
-                                    <p v-if="step.date" class="text-xs text-muted-foreground">{{ formatDateTime(step.date) }}</p>
-                                </div>
-                            </li>
-                        </ol>
+                        <StatusTimeline :steps="timeline" />
                         <p v-if="q.rejection_reason" class="rounded-md bg-muted p-3 whitespace-pre-line">{{ q.rejection_reason }}</p>
                         <p v-if="salesOrder" class="text-muted-foreground">
-                            Commande <span class="font-medium text-foreground">{{ salesOrder.reference }}</span> créée.
+                            Commande
+                            <Link v-if="can('sales_orders.view')" :href="route('sales.orders.show', salesOrder.id)" class="font-medium text-foreground hover:underline">{{ salesOrder.reference }}</Link>
+                            <span v-else class="font-medium text-foreground">{{ salesOrder.reference }}</span>
+                            créée.
                         </p>
                     </CardContent>
                 </Card>

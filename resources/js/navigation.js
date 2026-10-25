@@ -28,8 +28,8 @@ export const navigation = [
         items: [
             { label: 'Clients', route: 'sales.customers.index', active: 'sales.customers.*', permission: 'customers.view_any', icon: Users },
             { label: 'Devis', route: 'sales.quotes.index', active: 'sales.quotes.*', permission: 'quotes.view_any', icon: FileText },
-            { label: 'Commandes', permission: 'sales_orders.view_any', icon: ShoppingCart },
-            { label: 'Factures', permission: 'invoices.view_any', icon: FileText },
+            { label: 'Commandes', route: 'sales.orders.index', active: 'sales.orders.*', permission: 'sales_orders.view_any', icon: ShoppingCart },
+            { label: 'Factures', route: 'sales.invoices.index', active: 'sales.invoices.*', permission: 'invoices.view_any', icon: FileText },
             { label: 'Bons de livraison', permission: 'delivery_notes.view_any', icon: Truck },
         ],
     },

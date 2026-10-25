@@ -162,7 +162,7 @@ class SalesOrderService
         }
 
         return DB::transaction(function () use ($order): Invoice {
-            $order->loadMissing('lines');
+            $order->loadMissing(['lines', 'paymentTerm']);
 
             $invoice = Invoice::create([
                 'company_id'      => $order->company_id,
@@ -171,7 +171,8 @@ class SalesOrderService
                 'customer_id'     => $order->customer_id,
                 'status'          => 'draft',
                 'invoice_date'    => now()->toDateString(),
-                'due_date'        => now()->toDateString(),
+                // Due date follows the order's payment terms (e.g. 30 days); immediate otherwise.
+                'due_date'        => now()->addDays((int) ($order->paymentTerm?->days ?? 0))->toDateString(),
                 'currency_id'     => $order->currency_id,
                 'payment_term_id' => $order->payment_term_id,
                 'subtotal_ht'     => $order->subtotal_ht,
@@ -239,7 +240,7 @@ class SalesOrderService
                 'sales_order_id' => $order->id,
                 'customer_id'    => $order->customer_id,
                 'status'         => 'draft',
-                'delivery_date'  => now()->toDateString(),
+                'date'           => now()->toDateString(),
                 'delivery_address' => $order->delivery_address,
                 'notes'          => $order->notes,
                 'created_by'     => auth()->id(),
