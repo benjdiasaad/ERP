@@ -94,6 +94,16 @@ class InvoicePagesTest extends TestCase
             ->assertRedirect()->assertRedirect()->assertSessionHasNoErrors();
         $this->assertTrue(CreditNote::where('invoice_id', $invoice->id)->exists());
 
+        // A discounted line keeps its discount in the credit note total.
+        $discounted = $this->createInvoice($company, $user, [
+            'lines' => [['description' => 'Écran', 'quantity' => 3, 'unit_price_ht' => 2600, 'discount_value' => 10, 'tax_rate' => 20]],
+        ]);
+        $this->actingAs($user)->post("/sales/invoices/{$discounted->id}/send");
+        $this->actingAs($user)->post("/sales/invoices/{$discounted->id}/create-credit-note")->assertRedirect()->assertSessionHasNoErrors();
+        $note = CreditNote::where('invoice_id', $discounted->id)->firstOrFail();
+        $this->assertEquals('8424.00', $note->total_ttc);
+        $this->assertEquals('780.00', $note->total_discount);
+
         $this->actingAs($user)->post("/sales/invoices/{$invoice->id}/cancel", ['reason' => 'Erreur'])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertEquals('cancelled', $invoice->fresh()->status);
     }

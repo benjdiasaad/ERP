@@ -259,7 +259,7 @@ class SalesOrderService
                     'product_id'         => $line->product_id,
                     'description'        => $line->description,
                     'ordered_quantity'   => $line->quantity,
-                    'delivered_quantity' => $remaining,
+                    'shipped_quantity'   => $remaining,
                     'sort_order'         => $line->sort_order,
                 ]);
 

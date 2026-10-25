@@ -13,6 +13,7 @@ use App\Models\Sales\Invoice;
 use App\Services\Sales\CreditNoteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\ValidationException;
 
@@ -97,7 +98,7 @@ class CreditNoteController extends Controller
         $this->authorize('apply', $creditNote);
 
         $request->validate([
-            'invoice_id' => ['required', 'integer', 'exists:invoices,id'],
+            'invoice_id' => ['required', 'integer', Rule::exists('invoices', 'id')->where('company_id', $request->user()->current_company_id)->whereNull('deleted_at')],
         ]);
 
         try {

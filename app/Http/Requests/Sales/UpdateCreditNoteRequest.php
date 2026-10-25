@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Sales;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCreditNoteRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -20,7 +23,7 @@ class UpdateCreditNoteRequest extends FormRequest
             'notes'                    => ['nullable', 'string', 'max:2000'],
             'lines'                    => ['nullable', 'array'],
             'lines.*.id'               => ['nullable', 'integer', 'exists:credit_note_lines,id'],
-            'lines.*.product_id'       => ['nullable', 'integer', 'exists:products,id'],
+            'lines.*.product_id'       => ['nullable', 'integer', $this->inCompany('products')],
             'lines.*.description'      => ['required_with:lines', 'string', 'max:500'],
             'lines.*.quantity'         => ['required_with:lines', 'numeric', 'min:0.01'],
             'lines.*.unit_price_ht'    => ['required_with:lines', 'numeric', 'min:0'],

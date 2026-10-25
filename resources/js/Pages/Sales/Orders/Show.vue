@@ -114,10 +114,10 @@ const destroy = () => router.delete(route('sales.orders.destroy', o.value.id));
                         <ul v-if="deliveryNotes.length" class="grid gap-3">
                             <li v-for="note in deliveryNotes" :key="note.id" class="flex items-center justify-between gap-3 text-sm">
                                 <div>
-                                    <p class="font-medium">{{ note.reference }}</p>
+                                    <Link :href="route('sales.delivery-notes.show', note.id)" class="font-medium hover:underline">{{ note.reference }}</Link>
                                     <p class="text-xs text-muted-foreground">{{ formatDate(note.date) }}</p>
                                 </div>
-                                <Badge variant="secondary">{{ label('deliveryStatus', note.status) }}</Badge>
+                                <Badge :variant="variant('deliveryStatus', note.status)">{{ label('deliveryStatus', note.status) }}</Badge>
                             </li>
                         </ul>
                         <p v-else class="text-sm text-muted-foreground">Aucun bon de livraison.</p>

@@ -206,19 +206,9 @@ class InvoiceService
                 $creditNote->lines()->create($this->calculateLineAmounts($lineData));
             }
 
-            // Recalculate totals on the credit note
-            $creditNote->loadMissing('lines');
-            $subtotalHt    = $creditNote->lines->sum('subtotal_ht');
-            $totalDiscount = $creditNote->lines->sum('discount_amount');
-            $totalTax      = $creditNote->lines->sum('tax_amount');
-            $totalTtc      = $subtotalHt - $totalDiscount + $totalTax;
-
-            $creditNote->update([
-                'subtotal_ht'    => round((float) $subtotalHt, 2),
-                'total_discount' => round((float) $totalDiscount, 2),
-                'total_tax'      => round((float) $totalTax, 2),
-                'total_ttc'      => round((float) $totalTtc, 2),
-            ]);
+            // Credit-note lines don't store a discount amount: let the credit-note
+            // service total them from the line totals.
+            app(CreditNoteService::class)->calculateTotals($creditNote);
 
             return $creditNote->fresh(['lines']);
         });

@@ -54,7 +54,8 @@ export const labels = {
     invoiceStatus: {
         draft: 'Brouillon', sent: 'Envoyée', partial: 'Paiement partiel', paid: 'Payée', overdue: 'En retard', cancelled: 'Annulée',
     },
-    deliveryStatus: { draft: 'Brouillon', ready: 'Prête', shipped: 'Expédiée', delivered: 'Livrée', returned: 'Retournée', cancelled: 'Annulée' },
+    deliveryStatus: { draft: 'Brouillon', ready: 'Prêt à expédier', shipped: 'Expédié', delivered: 'Livré', returned: 'Retourné' },
+    creditNoteStatus: { draft: 'Brouillon', confirmed: 'Confirmé', applied: 'Imputé' },
     paymentMethod: { bank_transfer: 'Virement', check: 'Chèque', cash: 'Espèces', credit_card: 'Carte bancaire', mobile: 'Paiement mobile' },
     eventType: {
         meeting: 'Réunion', conference: 'Conférence', training: 'Formation',
@@ -71,6 +72,8 @@ export const variants = {
     quoteStatus: { draft: 'outline', sent: 'secondary', accepted: 'default', converted: 'default', rejected: 'destructive', expired: 'outline' },
     orderStatus: { draft: 'outline', confirmed: 'secondary', in_progress: 'secondary', delivered: 'default', invoiced: 'default', cancelled: 'destructive' },
     invoiceStatus: { draft: 'outline', sent: 'secondary', partial: 'secondary', paid: 'default', overdue: 'destructive', cancelled: 'outline' },
+    deliveryStatus: { draft: 'outline', ready: 'secondary', shipped: 'secondary', delivered: 'default', returned: 'destructive' },
+    creditNoteStatus: { draft: 'outline', confirmed: 'secondary', applied: 'default' },
 };
 
 export const variant = (group, value) => variants[group]?.[value] ?? 'secondary';

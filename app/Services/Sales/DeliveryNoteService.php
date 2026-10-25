@@ -88,6 +88,28 @@ class DeliveryNoteService
     /**
      * Transition ready → shipped. Optionally set carrier/tracking info.
      */
+    /**
+     * Transition draft → ready (prepared, waiting for pickup).
+     */
+    public function markReady(DeliveryNote $deliveryNote): DeliveryNote
+    {
+        if ($deliveryNote->status !== 'draft') {
+            throw ValidationException::withMessages([
+                'status' => "Only draft delivery notes can be marked ready. Current status: {$deliveryNote->status}.",
+            ]);
+        }
+
+        if (!$deliveryNote->lines()->where('shipped_quantity', '>', 0)->exists()) {
+            throw ValidationException::withMessages([
+                'lines' => 'A delivery note needs at least one line with a quantity to ship.',
+            ]);
+        }
+
+        $deliveryNote->update(['status' => 'ready']);
+
+        return $deliveryNote->fresh(['lines', 'customer', 'salesOrder']);
+    }
+
     public function ship(DeliveryNote $deliveryNote, array $data = []): DeliveryNote
     {
         if ($deliveryNote->status !== 'ready') {
@@ -139,10 +161,12 @@ class DeliveryNoteService
                     continue;
                 }
 
-                $newDeliveredQty = round(
-                    (float) $orderLine->delivered_quantity + (float) $line->shipped_quantity,
-                    4
-                );
+                // Capped at the ordered quantity: notes generated from the order
+                // already reserved their quantity on the order line.
+                $newDeliveredQty = round(min(
+                    (float) $orderLine->quantity,
+                    (float) $orderLine->delivered_quantity + (float) $line->shipped_quantity
+                ), 4);
 
                 $orderLine->update([
                     'delivered_quantity' => $newDeliveredQty,

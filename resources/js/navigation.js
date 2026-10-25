@@ -1,7 +1,7 @@
 import {
     LayoutDashboard, Users, Building2, ShoppingCart, FileText, Truck, Package, Warehouse,
     Landmark, BookOpen, ShieldCheck, CalendarDays, Contact, Target, TrendingUp, ListTodo,
-    FolderKanban, UserCog, Settings,
+    FolderKanban, UserCog, Settings, FileMinus,
 } from '@lucide/vue';
 
 /**
@@ -30,7 +30,8 @@ export const navigation = [
             { label: 'Devis', route: 'sales.quotes.index', active: 'sales.quotes.*', permission: 'quotes.view_any', icon: FileText },
             { label: 'Commandes', route: 'sales.orders.index', active: 'sales.orders.*', permission: 'sales_orders.view_any', icon: ShoppingCart },
             { label: 'Factures', route: 'sales.invoices.index', active: 'sales.invoices.*', permission: 'invoices.view_any', icon: FileText },
-            { label: 'Bons de livraison', permission: 'delivery_notes.view_any', icon: Truck },
+            { label: 'Bons de livraison', route: 'sales.delivery-notes.index', active: 'sales.delivery-notes.*', permission: 'delivery_notes.view_any', icon: Truck },
+            { label: 'Avoirs', route: 'sales.credit-notes.index', active: 'sales.credit-notes.*', permission: 'credit_notes.view_any', icon: FileMinus },
         ],
     },
     {

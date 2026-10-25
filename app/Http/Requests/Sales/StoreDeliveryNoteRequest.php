@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Sales;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreDeliveryNoteRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -16,8 +19,8 @@ class StoreDeliveryNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sales_order_id'           => ['required', 'integer', 'exists:sales_orders,id'],
-            'customer_id'              => ['required', 'integer', 'exists:customers,id'],
+            'sales_order_id'           => ['nullable', 'integer', $this->inCompany('sales_orders')],
+            'customer_id'              => ['required', 'integer', $this->inCompany('customers')],
             'date'                     => ['nullable', 'date'],
             'expected_delivery_date'   => ['nullable', 'date'],
             'delivery_address'         => ['nullable', 'string', 'max:1000'],
@@ -25,8 +28,8 @@ class StoreDeliveryNoteRequest extends FormRequest
             'tracking_number'          => ['nullable', 'string', 'max:255'],
             'notes'                    => ['nullable', 'string', 'max:2000'],
             'lines'                    => ['required', 'array', 'min:1'],
-            'lines.*.sales_order_line_id' => ['nullable', 'integer', 'exists:sales_order_lines,id'],
-            'lines.*.product_id'       => ['nullable', 'integer', 'exists:products,id'],
+            'lines.*.sales_order_line_id' => ['nullable', 'integer', $this->inCompany('sales_order_lines', 'id', false)],
+            'lines.*.product_id'       => ['nullable', 'integer', $this->inCompany('products')],
             'lines.*.description'      => ['required', 'string', 'max:500'],
             'lines.*.ordered_quantity' => ['required', 'numeric', 'min:0.01'],
             'lines.*.shipped_quantity' => ['required', 'numeric', 'min:0'],

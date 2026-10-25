@@ -90,10 +90,10 @@ const destroy = () => router.delete(route('sales.invoices.destroy', i.value.id))
                     <CardContent>
                         <ul class="grid gap-3">
                             <li v-for="note in creditNotes" :key="note.id" class="flex items-center justify-between gap-3 text-sm">
-                                <span class="font-medium">{{ note.reference }}</span>
+                                <Link :href="route('sales.credit-notes.show', note.id)" class="font-medium hover:underline">{{ note.reference }}</Link>
                                 <div class="flex items-center gap-3">
                                     <span class="tabular-nums">{{ formatMoney(note.total_ttc) }}</span>
-                                    <Badge variant="secondary">{{ note.status === 'draft' ? 'Brouillon' : note.status }}</Badge>
+                                    <Badge :variant="variant('creditNoteStatus', note.status)">{{ label('creditNoteStatus', note.status) }}</Badge>
                                 </div>
                             </li>
                         </ul>

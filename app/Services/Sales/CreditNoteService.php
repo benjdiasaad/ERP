@@ -161,9 +161,11 @@ class CreditNoteService
             $totalTtc   += (float) $line->total_ttc;
         }
 
+        // Lines don't store their discount amount; it is what separates
+        // subtotal + tax from the line totals.
         $creditNote->update([
             'subtotal_ht'    => round($subtotalHt, 2),
-            'total_discount' => 0,
+            'total_discount' => round(max(0, $subtotalHt + $totalTax - $totalTtc), 2),
             'total_tax'      => round($totalTax, 2),
             'total_ttc'      => round($totalTtc, 2),
         ]);

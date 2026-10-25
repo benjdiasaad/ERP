@@ -7,7 +7,9 @@ use App\Http\Controllers\Web\CRM\ContactController;
 use App\Http\Controllers\Web\CRM\LeadController;
 use App\Http\Controllers\Web\CRM\OpportunityController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\Sales\CreditNoteController;
 use App\Http\Controllers\Web\Sales\CustomerController;
+use App\Http\Controllers\Web\Sales\DeliveryNoteController;
 use App\Http\Controllers\Web\Sales\InvoiceController;
 use App\Http\Controllers\Web\Sales\QuoteController;
 use App\Http\Controllers\Web\Sales\SalesOrderController;
@@ -119,6 +121,32 @@ Route::middleware('auth')->group(function () {
                 Route::post("invoices/{invoice}/{$uri}", [InvoiceController::class, str($uri)->camel()->toString()])
                     ->middleware("permission:invoices.{$permission}")
                     ->name("invoices.{$uri}");
+            }
+
+            Route::resource('delivery-notes', DeliveryNoteController::class)
+                ->parameters(['delivery-notes' => 'deliveryNote'])
+                ->middlewareFor('index', 'permission:delivery_notes.view_any')
+                ->middlewareFor('show', 'permission:delivery_notes.view')
+                ->middlewareFor(['create', 'store'], 'permission:delivery_notes.create')
+                ->middlewareFor(['edit', 'update'], 'permission:delivery_notes.update')
+                ->middlewareFor('destroy', 'permission:delivery_notes.delete');
+            foreach (['ready' => 'update', 'ship' => 'ship', 'deliver' => 'deliver', 'return' => 'return'] as $action => $permission) {
+                Route::post("delivery-notes/{deliveryNote}/{$action}", [DeliveryNoteController::class, $action])
+                    ->middleware("permission:delivery_notes.{$permission}")
+                    ->name("delivery-notes.{$action}");
+            }
+
+            Route::resource('credit-notes', CreditNoteController::class)
+                ->parameters(['credit-notes' => 'creditNote'])
+                ->middlewareFor('index', 'permission:credit_notes.view_any')
+                ->middlewareFor('show', 'permission:credit_notes.view')
+                ->middlewareFor(['create', 'store'], 'permission:credit_notes.create')
+                ->middlewareFor(['edit', 'update'], 'permission:credit_notes.update')
+                ->middlewareFor('destroy', 'permission:credit_notes.delete');
+            foreach (['confirm', 'apply'] as $action) {
+                Route::post("credit-notes/{creditNote}/{$action}", [CreditNoteController::class, $action])
+                    ->middleware("permission:credit_notes.{$action}")
+                    ->name("credit-notes.{$action}");
             }
         });
     });

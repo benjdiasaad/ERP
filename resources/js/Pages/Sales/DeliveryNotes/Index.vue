@@ -1,0 +1,98 @@
+<script setup>
+import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
+import { Plus, Search, Truck } from '@lucide/vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import DataPagination from '@/components/DataPagination.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useFilters } from '@/composables/useFilters';
+import { usePermissions } from '@/composables/usePermissions';
+import { formatDate, label, variant } from '@/composables/format';
+
+const props = defineProps({
+    notes: { type: Object, required: true },
+    filters: { type: Object, required: true },
+    statuses: { type: Array, required: true },
+    counts: { type: Object, required: true },
+});
+
+const { can } = usePermissions();
+const filters = useFilters('sales.delivery-notes.index', props.filters, { search: '', status: '' });
+const statusTab = computed({
+    get: () => filters.status || 'all',
+    set: (value) => (filters.status = value === 'all' ? '' : value),
+});
+const total = computed(() => Object.values(props.counts).reduce((sum, n) => sum + n, 0));
+</script>
+
+<template>
+    <AppLayout title="Bons de livraison" :breadcrumbs="[{ title: 'Ventes' }, { title: 'Bons de livraison' }]">
+        <PageHeader title="Bons de livraison" description="Préparation, expédition et livraison des marchandises.">
+            <template #actions>
+                <Button v-if="can('delivery_notes.create')" variant="outline" as-child>
+                    <Link :href="route('sales.delivery-notes.create')"><Plus /> Bon libre</Link>
+                </Button>
+            </template>
+        </PageHeader>
+
+        <Card class="gap-4 py-4">
+            <CardContent class="grid gap-3 px-4">
+                <Tabs v-model="statusTab" class="overflow-x-auto">
+                    <TabsList>
+                        <TabsTrigger value="all">Tous <span class="text-muted-foreground">{{ total }}</span></TabsTrigger>
+                        <TabsTrigger v-for="status in statuses" :key="status" :value="status">
+                            {{ label('deliveryStatus', status) }} <span class="text-muted-foreground">{{ counts[status] }}</span>
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                <div class="relative">
+                    <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input v-model="filters.search" type="search" placeholder="Référence, client ou n° de suivi…" class="pl-8" aria-label="Rechercher" />
+                </div>
+            </CardContent>
+
+            <Table v-if="notes.data.length">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead class="pl-4">Bon</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead class="hidden md:table-cell">Commande</TableHead>
+                        <TableHead class="hidden lg:table-cell">Transporteur</TableHead>
+                        <TableHead class="pr-4">Statut</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow v-for="note in notes.data" :key="note.id">
+                        <TableCell class="pl-4">
+                            <Link :href="route('sales.delivery-notes.show', note.id)" class="font-medium hover:underline">{{ note.reference }}</Link>
+                            <p class="text-xs text-muted-foreground">{{ formatDate(note.date) }}</p>
+                        </TableCell>
+                        <TableCell class="max-w-48 truncate">{{ note.customer?.name ?? '—' }}</TableCell>
+                        <TableCell class="hidden text-muted-foreground md:table-cell">{{ note.sales_order?.reference ?? '—' }}</TableCell>
+                        <TableCell class="hidden text-muted-foreground lg:table-cell">
+                            {{ note.carrier ?? '—' }}<span v-if="note.tracking_number" class="block text-xs">{{ note.tracking_number }}</span>
+                        </TableCell>
+                        <TableCell class="pr-4"><Badge :variant="variant('deliveryStatus', note.status)">{{ label('deliveryStatus', note.status) }}</Badge></TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+
+            <Empty v-else>
+                <EmptyHeader>
+                    <EmptyMedia variant="icon"><Truck /></EmptyMedia>
+                    <EmptyTitle>Aucun bon de livraison</EmptyTitle>
+                    <EmptyDescription>Générez-les depuis une commande confirmée.</EmptyDescription>
+                </EmptyHeader>
+            </Empty>
+
+            <DataPagination :meta="notes.meta" class="px-4" />
+        </Card>
+    </AppLayout>
+</template>

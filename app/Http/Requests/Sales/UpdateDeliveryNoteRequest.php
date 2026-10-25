@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Sales;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateDeliveryNoteRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -23,8 +26,8 @@ class UpdateDeliveryNoteRequest extends FormRequest
             'notes'                    => ['nullable', 'string', 'max:2000'],
             'lines'                    => ['nullable', 'array'],
             'lines.*.id'               => ['nullable', 'integer', 'exists:delivery_note_lines,id'],
-            'lines.*.sales_order_line_id' => ['nullable', 'integer', 'exists:sales_order_lines,id'],
-            'lines.*.product_id'       => ['nullable', 'integer', 'exists:products,id'],
+            'lines.*.sales_order_line_id' => ['nullable', 'integer', $this->inCompany('sales_order_lines', 'id', false)],
+            'lines.*.product_id'       => ['nullable', 'integer', $this->inCompany('products')],
             'lines.*.description'      => ['required_with:lines', 'string', 'max:500'],
             'lines.*.ordered_quantity' => ['required_with:lines', 'numeric', 'min:0.01'],
             'lines.*.shipped_quantity' => ['required_with:lines', 'numeric', 'min:0'],
