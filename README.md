@@ -1,6 +1,6 @@
 # ERP
 
-Multi-company ERP system built with Laravel 12, PostgreSQL, Tailwind CSS & Sanctum — featuring Sales, Purchasing, Inventory, Finance, HR, CRM, Projects, Events & Caution modules with granular RBAC permissions and full tenant isolation
+Multi-company ERP system built with Laravel 12, PostgreSQL, Vue 3 + Inertia (shadcn-vue) & Sanctum — featuring Sales, Purchasing, Inventory, Finance, HR, CRM, Projects, Events & Caution modules with granular RBAC permissions and full tenant isolation
 
 ---
 
@@ -9,9 +9,9 @@ Multi-company ERP system built with Laravel 12, PostgreSQL, Tailwind CSS & Sanct
 | Layer | Technology |
 |-------|-----------|
 | Backend | Laravel 12 (PHP 8.2+) |
-| Database | PostgreSQL |
-| Auth | Laravel Sanctum |
-| Frontend | Blade + Tailwind CSS |
+| Database | PostgreSQL (MySQL and SQLite also work) |
+| Auth | Session (web app) + Laravel Sanctum (API) |
+| Frontend | Vue 3 + Inertia.js + shadcn-vue + Tailwind CSS 4 |
 | Testing | PHPUnit (TDD) |
 | Multi-tenancy | Single DB + `company_id` |
 
@@ -182,17 +182,28 @@ Route::middleware('permission:invoices.create')->post('/invoices', ...);
 git clone https://github.com/benjdiasaad/ERP.git
 cd ERP
 
-composer install
-npm install
-
-cp .env.example .env
-php artisan key:generate
-
-# Configure PostgreSQL in .env then:
-php artisan migrate --seed
-npm run build
+cp .env.example .env              # then set DB_* (PostgreSQL, MySQL or SQLite)
+composer run setup                # composer install, key, migrate, npm install, npm run build
+php artisan db:seed               # roles, permissions, demo companies & data
 php artisan serve
 ```
+
+Open http://127.0.0.1:8000 and log in with **test@example.com / Password1!** (Super Admin in both demo companies).
+Other demo users (same password): `sara.manager@atlas.test`, `youssef.user@atlas.test`, `leila.viewer@atlas.test` and their `@sahara.test` equivalents.
+
+> **"Vite manifest not found" error?** The screens are Vue components compiled by Vite: run `npm install && npm run build` once,
+> or use `composer run dev` while developing (Laravel + Vite with hot reload).
+
+### Frontend
+
+| Path | Content |
+|------|---------|
+| `resources/js/Pages/` | Inertia pages (one per screen) |
+| `resources/js/layouts/` | App layout (sidebar, company switcher) and guest layout |
+| `resources/js/components/ui/` | shadcn-vue components (add more with `npx shadcn-vue@latest add <name>`) |
+| `routes/web.php` | Web screens (session auth); the JSON API stays in `routes/api.php` |
+
+Screens available: login, dashboard, CRM (contacts, leads, opportunities, activities). Other modules are listed in the menu as *Bientôt* until their screens are built.
 
 ---
 
