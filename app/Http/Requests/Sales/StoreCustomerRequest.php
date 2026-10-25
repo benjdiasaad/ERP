@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Sales;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCustomerRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -31,9 +34,9 @@ class StoreCustomerRequest extends FormRequest
             'tax_id'           => ['nullable', 'string', 'max:50'],
             'ice'              => ['nullable', 'string', 'max:50'],
             'rc'               => ['nullable', 'string', 'max:50'],
-            'payment_terms_id' => ['nullable', 'integer', 'exists:payment_terms,id'],
+            'payment_terms_id' => ['nullable', 'integer', $this->inCompanyOrShared('payment_terms')],
             'credit_limit'     => ['nullable', 'numeric', 'min:0'],
-            'currency_id'      => ['nullable', 'integer', 'exists:currencies,id'],
+            'currency_id'      => ['nullable', 'integer', $this->inCompanyOrShared('currencies')],
             'notes'            => ['nullable', 'string'],
             'is_active'        => ['boolean'],
         ];

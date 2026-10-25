@@ -24,6 +24,22 @@ class Customer extends Model
         return CustomerFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $customer): void {
+            // `name` is required in the database; individuals are entered with
+            // first/last name only, so derive the display name from them.
+            if (blank($customer->name)) {
+                $customer->name = trim("{$customer->first_name} {$customer->last_name}") ?: null;
+            }
+
+            // An empty credit limit means "no limit", stored as 0 (the column is NOT NULL).
+            if ($customer->credit_limit === null) {
+                $customer->credit_limit = 0;
+            }
+        });
+    }
+
     protected $fillable = [
         'company_id',
         'code',

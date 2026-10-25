@@ -7,6 +7,8 @@ use App\Http\Controllers\Web\CRM\ContactController;
 use App\Http\Controllers\Web\CRM\LeadController;
 use App\Http\Controllers\Web\CRM\OpportunityController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\Sales\CustomerController;
+use App\Http\Controllers\Web\Sales\QuoteController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,6 +62,27 @@ Route::middleware('auth')->group(function () {
                 ->middlewareFor(['edit', 'update'], 'permission:activities.update')
                 ->middlewareFor('destroy', 'permission:activities.delete');
             Route::post('activities/{activity}/complete', [ActivityController::class, 'complete'])->middleware('permission:activities.complete')->name('activities.complete');
+        });
+
+        Route::prefix('sales')->name('sales.')->group(function () {
+            Route::resource('customers', CustomerController::class)
+                ->middlewareFor('index', 'permission:customers.view_any')
+                ->middlewareFor('show', 'permission:customers.view')
+                ->middlewareFor(['create', 'store'], 'permission:customers.create')
+                ->middlewareFor(['edit', 'update'], 'permission:customers.update')
+                ->middlewareFor('destroy', 'permission:customers.delete');
+
+            Route::resource('quotes', QuoteController::class)
+                ->middlewareFor('index', 'permission:quotes.view_any')
+                ->middlewareFor('show', 'permission:quotes.view')
+                ->middlewareFor(['create', 'store'], 'permission:quotes.create')
+                ->middlewareFor(['edit', 'update'], 'permission:quotes.update')
+                ->middlewareFor('destroy', 'permission:quotes.delete');
+            foreach (['send', 'accept', 'reject', 'convert', 'duplicate'] as $action) {
+                Route::post("quotes/{quote}/{$action}", [QuoteController::class, $action])
+                    ->middleware("permission:quotes.{$action}")
+                    ->name("quotes.{$action}");
+            }
         });
     });
 });
