@@ -61,6 +61,20 @@ class Activity extends Model
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
+    /**
+     * Human-readable name of the related record (requires the `related` relation).
+     */
+    public function relatedLabel(): ?string
+    {
+        return match (true) {
+            $this->related instanceof Contact     => $this->related->full_name,
+            $this->related instanceof Lead        => "{$this->related->reference} · {$this->related->title}",
+            $this->related instanceof Opportunity => "{$this->related->reference} · {$this->related->title}",
+            $this->related instanceof Customer    => $this->related->name,
+            default                               => null,
+        };
+    }
+
     public function getRelatedAliasAttribute(): ?string
     {
         $alias = array_search($this->related_type, self::RELATED_TYPES, true);

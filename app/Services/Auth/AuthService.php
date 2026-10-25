@@ -59,14 +59,35 @@ class AuthService
     /**
      * Authenticate a user and return a Sanctum token.
      *
-     * Checks rate limiting, account lockout, and active status.
-     *
      * @param  array{email: string, password: string, ip: string} $data
      * @return array{user: User, token: string, companies: \Illuminate\Database\Eloquent\Collection}
      *
      * @throws ValidationException on invalid credentials, lockout, or inactive account.
      */
     public function login(array $data): array
+    {
+        $user = $this->authenticate($data);
+
+        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration', 1440)))->plainTextToken;
+
+        return [
+            'user'      => $user,
+            'token'     => $token,
+            'companies' => $user->companies()->withPivot(['is_default', 'joined_at'])->get(),
+        ];
+    }
+
+    /**
+     * Verify credentials without issuing a token (shared by API and web login).
+     *
+     * Checks rate limiting, account lockout, and active status, records the
+     * attempt and updates last login info.
+     *
+     * @param  array{email: string, password: string, ip: string} $data
+     *
+     * @throws ValidationException on invalid credentials, lockout, or inactive account.
+     */
+    public function authenticate(array $data): User
     {
         $email = $data['email'];
         $ip    = $data['ip'];
@@ -118,13 +139,7 @@ class AuthService
             'last_login_ip' => $ip,
         ]);
 
-        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration', 1440)))->plainTextToken;
-
-        return [
-            'user'      => $user->fresh(),
-            'token'     => $token,
-            'companies' => $user->companies()->withPivot(['is_default', 'joined_at'])->get(),
-        ];
+        return $user->fresh();
     }
 
     // ─── Logout ───────────────────────────────────────────────────────────────

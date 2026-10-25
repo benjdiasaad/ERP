@@ -143,4 +143,24 @@ class User extends Authenticatable
             ->wherePivot('company_id', $companyId)
             ->get();
     }
+
+    /**
+     * All permission slugs granted by the user's roles in the current company.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    public function permissionSlugs(): \Illuminate\Support\Collection
+    {
+        if (!$this->current_company_id) {
+            return collect();
+        }
+
+        return Permission::query()
+            ->whereHas('roles.users', fn ($query) => $query
+                ->where('users.id', $this->id)
+                ->where('role_user.company_id', $this->current_company_id))
+            ->orderBy('slug')
+            ->pluck('slug')
+            ->unique();
+    }
 }

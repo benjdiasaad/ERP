@@ -18,6 +18,7 @@ class ActivityResource extends JsonResource
             'description'  => $this->description,
             'related_type' => $this->related_alias,
             'related_id'   => $this->related_id,
+            'related_label' => $this->whenLoaded('related', fn () => $this->relatedLabel()),
             'assigned_to'  => $this->assigned_to,
             'assignee'     => $this->whenLoaded('assignee', fn () => $this->assignee ? [
                 'id'   => $this->assignee->id,

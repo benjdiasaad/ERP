@@ -8,12 +8,10 @@ use Tests\TestCase;
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
+     * The home page is the dashboard, so guests are sent to the login page.
      */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_home_redirects_guests_to_login(): void
     {
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
+        $this->get('/')->assertRedirect(route('login'));
     }
 }
