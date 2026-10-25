@@ -1,9 +1,12 @@
 const currencyFormatter = new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD', maximumFractionDigits: 0 });
+const preciseCurrencyFormatter = new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD', minimumFractionDigits: 2 });
 const numberFormatter = new Intl.NumberFormat('fr-FR');
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 const dateTimeFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export const formatCurrency = (value) => currencyFormatter.format(Number(value ?? 0));
+/** With centimes, for documents (quotes, invoices). */
+export const formatMoney = (value) => preciseCurrencyFormatter.format(Number(value ?? 0));
 export const formatNumber = (value) => numberFormatter.format(Number(value ?? 0));
 export const formatPercent = (value) => `${numberFormatter.format(Number(value ?? 0))} %`;
 export const formatDate = (value) => (value ? dateFormatter.format(new Date(value)) : '—');
@@ -41,6 +44,10 @@ export const labels = {
         pending: 'À faire', in_progress: 'En cours', completed: 'Terminée', cancelled: 'Annulée',
     },
     priority: { low: 'Basse', medium: 'Moyenne', high: 'Haute' },
+    quoteStatus: {
+        draft: 'Brouillon', sent: 'Envoyé', accepted: 'Accepté', rejected: 'Refusé', expired: 'Expiré', converted: 'Converti',
+    },
+    customerType: { individual: 'Particulier', company: 'Entreprise' },
     eventType: {
         meeting: 'Réunion', conference: 'Conférence', training: 'Formation',
         workshop: 'Atelier', social: 'Social', holiday: 'Congé',
@@ -53,6 +60,7 @@ export const variants = {
     stage: { closed_won: 'default', closed_lost: 'destructive' },
     activityStatus: { completed: 'default', cancelled: 'outline', in_progress: 'secondary', pending: 'outline' },
     priority: { high: 'destructive', medium: 'secondary', low: 'outline' },
+    quoteStatus: { draft: 'outline', sent: 'secondary', accepted: 'default', converted: 'default', rejected: 'destructive', expired: 'outline' },
 };
 
 export const variant = (group, value) => variants[group]?.[value] ?? 'secondary';
