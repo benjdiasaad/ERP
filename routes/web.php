@@ -1,12 +1,17 @@
 <?php
 
 use App\Http\Controllers\Web\Auth\LoginController;
+use App\Http\Controllers\Web\Caution\CautionController;
+use App\Http\Controllers\Web\Caution\CautionTypeController;
 use App\Http\Controllers\Web\CompanySwitchController;
 use App\Http\Controllers\Web\CRM\ActivityController;
 use App\Http\Controllers\Web\CRM\ContactController;
 use App\Http\Controllers\Web\CRM\LeadController;
 use App\Http\Controllers\Web\CRM\OpportunityController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\Finance\BankAccountController;
+use App\Http\Controllers\Web\Finance\ChartOfAccountController;
+use App\Http\Controllers\Web\Finance\JournalEntryController;
 use App\Http\Controllers\Web\Inventory\ProductCategoryController;
 use App\Http\Controllers\Web\Inventory\ProductController as InventoryProductController;
 use App\Http\Controllers\Web\Inventory\StockInventoryController;
@@ -158,6 +163,63 @@ Route::middleware('auth')->group(function () {
                 Route::post("credit-notes/{creditNote}/{$action}", [CreditNoteController::class, $action])
                     ->middleware("permission:credit_notes.{$action}")
                     ->name("credit-notes.{$action}");
+            }
+        });
+
+        Route::prefix('finance')->name('finance.')->group(function () {
+            Route::resource('bank-accounts', BankAccountController::class)
+                ->parameters(['bank-accounts' => 'bankAccount'])
+                ->middlewareFor('index', 'permission:bank_accounts.view_any')
+                ->middlewareFor('show', 'permission:bank_accounts.view')
+                ->middlewareFor(['create', 'store'], 'permission:bank_accounts.create')
+                ->middlewareFor(['edit', 'update'], 'permission:bank_accounts.update')
+                ->middlewareFor('destroy', 'permission:bank_accounts.delete');
+
+            Route::resource('accounts', ChartOfAccountController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->middlewareFor('index', 'permission:chart_of_accounts.view_any')
+                ->middlewareFor('store', 'permission:chart_of_accounts.create')
+                ->middlewareFor('update', 'permission:chart_of_accounts.update')
+                ->middlewareFor('destroy', 'permission:chart_of_accounts.delete');
+
+            Route::resource('journal-entries', JournalEntryController::class)
+                ->parameters(['journal-entries' => 'journalEntry'])
+                ->middlewareFor('index', 'permission:journal_entries.view_any')
+                ->middlewareFor('show', 'permission:journal_entries.view')
+                ->middlewareFor(['create', 'store'], 'permission:journal_entries.create')
+                ->middlewareFor(['edit', 'update'], 'permission:journal_entries.update')
+                ->middlewareFor('destroy', 'permission:journal_entries.delete');
+            foreach (['post', 'cancel'] as $action) {
+                Route::post("journal-entries/{journalEntry}/{$action}", [JournalEntryController::class, $action])
+                    ->middleware("permission:journal_entries.{$action}")
+                    ->name("journal-entries.{$action}");
+            }
+
+            Route::resource('caution-types', CautionTypeController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->parameters(['caution-types' => 'type'])
+                ->middlewareFor('index', 'permission:caution_types.view_any')
+                ->middlewareFor('store', 'permission:caution_types.create')
+                ->middlewareFor('update', 'permission:caution_types.update')
+                ->middlewareFor('destroy', 'permission:caution_types.delete');
+
+            Route::resource('cautions', CautionController::class)
+                ->middlewareFor('index', 'permission:cautions.view_any')
+                ->middlewareFor('show', 'permission:cautions.view')
+                ->middlewareFor(['create', 'store'], 'permission:cautions.create')
+                ->middlewareFor(['edit', 'update'], 'permission:cautions.update')
+                ->middlewareFor('destroy', 'permission:cautions.delete');
+            foreach ([
+                'activate'       => 'activate',
+                'partial-return' => 'partial_return',
+                'full-return'    => 'full_return',
+                'extend'         => 'extend',
+                'forfeit'        => 'forfeit',
+                'cancel'         => 'cancel',
+            ] as $uri => $permission) {
+                Route::post("cautions/{caution}/{$uri}", [CautionController::class, str($uri)->camel()->toString()])
+                    ->middleware("permission:cautions.{$permission}")
+                    ->name("cautions.{$uri}");
             }
         });
 

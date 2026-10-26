@@ -20,16 +20,14 @@ class JournalEntryService
     public function create(array $data): JournalEntry
     {
         return DB::transaction(function () use ($data): JournalEntry {
-            $data['status'] = $data['status'] ?? 'draft';
+            $data['status'] = 'draft';
+            $data['reference'] = $data['reference'] ?? $this->generateReference();
             $data['created_by'] = auth()->id();
 
             $entry = JournalEntry::create(Arr::except($data, ['lines']));
 
-            if (!empty($data['lines'])) {
-                foreach ($data['lines'] as $index => $lineData) {
-                    $lineData['sort_order'] = $lineData['sort_order'] ?? $index;
-                    $entry->lines()->create($lineData);
-                }
+            foreach ($data['lines'] ?? [] as $index => $lineData) {
+                $entry->lines()->create($this->lineAttributes($entry, $lineData, $index));
             }
 
             $this->calculateTotals($entry);
@@ -50,21 +48,21 @@ class JournalEntryService
         }
 
         return DB::transaction(function () use ($entry, $data): JournalEntry {
-            $entry->update(Arr::except($data, ['lines']));
+            $entry->update(Arr::except($data, ['lines', 'status', 'company_id']) + ['updated_by' => auth()->id()]);
 
             if (array_key_exists('lines', $data)) {
                 $existingIds = $entry->lines()->pluck('id')->toArray();
                 $incomingIds = [];
 
                 foreach ($data['lines'] as $index => $lineData) {
-                    $lineData['sort_order'] = $lineData['sort_order'] ?? $index;
+                    $attributes = $this->lineAttributes($entry, $lineData, $index);
+                    $line = !empty($lineData['id']) ? $entry->lines()->find($lineData['id']) : null;
 
-                    if (!empty($lineData['id'])) {
-                        $entry->lines()->where('id', $lineData['id'])->update($lineData);
-                        $incomingIds[] = $lineData['id'];
+                    if ($line) {
+                        $line->update($attributes);
+                        $incomingIds[] = $line->id;
                     } else {
-                        $newLine = $entry->lines()->create($lineData);
-                        $incomingIds[] = $newLine->id;
+                        $incomingIds[] = $entry->lines()->create($attributes)->id;
                     }
                 }
 
@@ -156,6 +154,32 @@ class JournalEntryService
         return $entry->fresh(['lines']);
     }
 
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    private function lineAttributes(JournalEntry $entry, array $lineData, int $index): array
+    {
+        return [
+            'company_id'          => $entry->company_id,
+            'chart_of_account_id' => $lineData['chart_of_account_id'],
+            'description'         => $lineData['description'] ?? null,
+            'debit'               => round((float) ($lineData['debit'] ?? 0), 2),
+            'credit'              => round((float) ($lineData['credit'] ?? 0), 2),
+            'sort_order'          => $lineData['sort_order'] ?? $index,
+        ];
+    }
+
+    /**
+     * Next EC-YYYY-NNNNN reference ("écriture comptable") for the current company.
+     */
+    private function generateReference(): string
+    {
+        $year = now()->format('Y');
+        $last = JournalEntry::withTrashed()->where('reference', 'like', "EC-{$year}-%")->orderByDesc('reference')->value('reference');
+        $next = $last ? (int) substr($last, -5) + 1 : 1;
+
+        return sprintf('EC-%s-%05d', $year, $next);
+    }
+
     // ─── Calculations ─────────────────────────────────────────────────────────
 
     /**
@@ -163,7 +187,7 @@ class JournalEntryService
      */
     public function calculateTotals(JournalEntry $entry): void
     {
-        $entry->loadMissing('lines');
+        $entry->load('lines');
 
         $totalDebit = $entry->lines->sum('debit');
         $totalCredit = $entry->lines->sum('credit');

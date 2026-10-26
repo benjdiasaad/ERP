@@ -46,7 +46,7 @@ class ChartOfAccountController extends Controller
     {
         $this->authorize('view', $account);
 
-        return new ChartOfAccountResource($account);
+        return new ChartOfAccountResource($account->load(['parent', 'children']));
     }
 
     public function update(UpdateChartOfAccountRequest $request, ChartOfAccount $account): ChartOfAccountResource

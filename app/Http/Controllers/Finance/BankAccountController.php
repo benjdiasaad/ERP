@@ -46,7 +46,7 @@ class BankAccountController extends Controller
     {
         $this->authorize('view', $account);
 
-        return new BankAccountResource($account);
+        return new BankAccountResource($account->load('currency'));
     }
 
     public function update(UpdateBankAccountRequest $request, BankAccount $account): BankAccountResource

@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CautionService
 {
@@ -73,8 +74,6 @@ class CautionService
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            $this->logHistory($caution, 'created', null, 'draft', $data['amount']);
-
             return $caution->fresh(['cautionType', 'partner', 'related']);
         });
     }
@@ -124,7 +123,7 @@ class CautionService
     {
         return DB::transaction(function () use ($caution): Caution {
             if ($caution->status !== 'draft') {
-                throw new \InvalidArgumentException('Only draft cautions can be activated.');
+                throw ValidationException::withMessages(['status' => 'Only draft cautions can be activated.']);
             }
 
             $oldStatus = $caution->status;
@@ -147,19 +146,26 @@ class CautionService
     {
         return DB::transaction(function () use ($caution, $amount, $notes): Caution {
             if ($caution->status !== 'active' && $caution->status !== 'partially_returned') {
-                throw new \InvalidArgumentException('Only active or partially returned cautions can have partial returns.');
+                throw ValidationException::withMessages(['status' => 'Only active or partially returned cautions can have partial returns.']);
             }
 
             if ($amount <= 0) {
-                throw new \InvalidArgumentException('Return amount must be greater than zero.');
+                throw ValidationException::withMessages(['amount' => 'Return amount must be greater than zero.']);
+            }
+
+            $remaining = $this->remaining($caution);
+            if ($amount - $remaining > 0.001) {
+                throw ValidationException::withMessages(['amount' => "Return amount exceeds the remaining amount ({$remaining})."]);
             }
 
             $oldStatus = $caution->status;
-            $newStatus = 'partially_returned';
+            $fullyReturned = $remaining - $amount < 0.001;
+            $newStatus = $fullyReturned ? 'returned' : 'partially_returned';
 
             $caution->update([
-                'status' => $newStatus,
-                'notes' => ($caution->notes ? $caution->notes . "\n" : '') . ($notes ?? 'Partial return recorded'),
+                'status'          => $newStatus,
+                'amount_returned' => round((float) $caution->amount_returned + $amount, 2),
+                'return_date'     => $fullyReturned ? now() : $caution->return_date,
             ]);
 
             $this->logHistory($caution, 'partial_return', $oldStatus, $newStatus, $amount, $notes);
@@ -178,19 +184,20 @@ class CautionService
     {
         return DB::transaction(function () use ($caution, $notes): Caution {
             if (!in_array($caution->status, ['active', 'partially_returned'])) {
-                throw new \InvalidArgumentException('Only active or partially returned cautions can be fully returned.');
+                throw ValidationException::withMessages(['status' => 'Only active or partially returned cautions can be fully returned.']);
             }
 
             $oldStatus = $caution->status;
             $newStatus = 'returned';
+            $remaining = $this->remaining($caution);
 
             $caution->update([
-                'status' => $newStatus,
-                'return_date' => now(),
-                'notes' => ($caution->notes ? $caution->notes . "\n" : '') . ($notes ?? 'Full return recorded'),
+                'status'          => $newStatus,
+                'amount_returned' => round((float) $caution->amount_returned + $remaining, 2),
+                'return_date'     => now(),
             ]);
 
-            $this->logHistory($caution, 'full_return', $oldStatus, $newStatus, $caution->amount, $notes);
+            $this->logHistory($caution, 'full_return', $oldStatus, $newStatus, $remaining, $notes);
 
             return $caution->fresh(['cautionType', 'partner', 'related']);
         });
@@ -207,17 +214,15 @@ class CautionService
     {
         return DB::transaction(function () use ($caution, $newExpiryDate, $notes): Caution {
             if ($newExpiryDate->lessThanOrEqualTo($caution->expiry_date)) {
-                throw new \InvalidArgumentException('New expiry date must be after the current expiry date.');
+                throw ValidationException::withMessages(['expiry_date' => 'New expiry date must be after the current expiry date.']);
             }
 
             $oldExpiryDate = $caution->expiry_date;
 
-            $caution->update([
-                'expiry_date' => $newExpiryDate,
-                'notes' => ($caution->notes ? $caution->notes . "\n" : '') . ($notes ?? "Extended from {$oldExpiryDate->toDateString()} to {$newExpiryDate->toDateString()}"),
-            ]);
+            $caution->update(['expiry_date' => $newExpiryDate]);
 
-            $this->logHistory($caution, 'extended', $caution->status, $caution->status, $caution->amount, $notes);
+            $this->logHistory($caution, 'extended', $caution->status, $caution->status, $caution->amount,
+                $notes ?? "Extended from {$oldExpiryDate->toDateString()} to {$newExpiryDate->toDateString()}");
 
             return $caution->fresh(['cautionType', 'partner', 'related']);
         });
@@ -233,18 +238,19 @@ class CautionService
     {
         return DB::transaction(function () use ($caution, $notes): Caution {
             if (!in_array($caution->status, ['active', 'partially_returned'])) {
-                throw new \InvalidArgumentException('Only active or partially returned cautions can be forfeited.');
+                throw ValidationException::withMessages(['status' => 'Only active or partially returned cautions can be forfeited.']);
             }
 
             $oldStatus = $caution->status;
             $newStatus = 'forfeited';
+            $remaining = $this->remaining($caution);
 
             $caution->update([
-                'status' => $newStatus,
-                'notes' => ($caution->notes ? $caution->notes . "\n" : '') . ($notes ?? 'Caution forfeited'),
+                'status'           => $newStatus,
+                'amount_forfeited' => round((float) $caution->amount_forfeited + $remaining, 2),
             ]);
 
-            $this->logHistory($caution, 'forfeited', $oldStatus, $newStatus, $caution->amount, $notes);
+            $this->logHistory($caution, 'forfeited', $oldStatus, $newStatus, $remaining, $notes);
 
             return $caution->fresh(['cautionType', 'partner', 'related']);
         });
@@ -260,16 +266,13 @@ class CautionService
     {
         return DB::transaction(function () use ($caution, $notes): Caution {
             if ($caution->status !== 'draft') {
-                throw new \InvalidArgumentException('Only draft cautions can be cancelled.');
+                throw ValidationException::withMessages(['status' => 'Only draft cautions can be cancelled.']);
             }
 
             $oldStatus = $caution->status;
             $newStatus = 'cancelled';
 
-            $caution->update([
-                'status' => $newStatus,
-                'notes' => ($caution->notes ? $caution->notes . "\n" : '') . ($notes ?? 'Caution cancelled'),
-            ]);
+            $caution->update(['status' => $newStatus]);
 
             $this->logHistory($caution, 'cancelled', $oldStatus, $newStatus, $caution->amount, $notes);
 
@@ -348,6 +351,14 @@ class CautionService
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /**
+     * Amount still held: neither returned nor forfeited.
+     */
+    private function remaining(Caution $caution): float
+    {
+        return round((float) $caution->amount - (float) $caution->amount_returned - (float) $caution->amount_forfeited, 2);
+    }
+
+    /**
      * Log a history entry for caution actions.
      */
     private function logHistory(
@@ -355,14 +366,14 @@ class CautionService
         string $action,
         ?string $previousStatus,
         string $newStatus,
-        float $amount,
+        float|string $amount,
         ?string $notes = null
     ): void {
         CautionHistory::create([
             'company_id' => auth()->user()->current_company_id,
             'caution_id' => $caution->id,
             'action' => $action,
-            'amount' => $amount,
+            'amount' => (float) $amount,
             'previous_status' => $previousStatus,
             'new_status' => $newStatus,
             'notes' => $notes,

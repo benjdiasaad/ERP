@@ -6,8 +6,9 @@ defineProps({
 </script>
 
 <template>
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div class="min-w-0 space-y-1">
+    <!-- The actions wrap under the title when there is not enough room beside it. -->
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div class="min-w-0 flex-1 basis-72 space-y-1">
             <h1 class="text-2xl font-semibold tracking-tight text-balance break-words">{{ title }}</h1>
             <p v-if="description" class="text-sm text-muted-foreground">{{ description }}</p>
         </div>

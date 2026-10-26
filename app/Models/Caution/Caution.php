@@ -6,6 +6,8 @@ use App\Traits\BelongsToCompany;
 use Database\Factories\CautionFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Purchasing\Supplier;
+use App\Models\Sales\Customer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,6 +22,28 @@ class Caution extends Model
     {
         return CautionFactory::new();
     }
+
+    protected static function booted(): void
+    {
+        // Every caution starts its history with a "created" entry, whatever created it.
+        static::created(function (self $caution): void {
+            CautionHistory::create([
+                'company_id' => $caution->company_id,
+                'caution_id' => $caution->id,
+                'action'     => 'created',
+                'amount'     => $caution->amount,
+                'new_status' => $caution->status,
+                'created_by' => auth()->id(),
+            ]);
+        });
+    }
+
+    /** Partner aliases accepted by the API → model class stored in `partner_type` (null: neither). */
+    public const PARTNER_TYPES = [
+        'customer' => Customer::class,
+        'supplier' => Supplier::class,
+        'other'    => null,
+    ];
 
     protected $fillable = [
         'company_id',

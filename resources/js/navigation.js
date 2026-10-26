@@ -2,7 +2,7 @@ import {
     LayoutDashboard, Users, Building2, ShoppingCart, FileText, Truck, Package, Warehouse,
     Landmark, BookOpen, ShieldCheck, CalendarDays, Contact, Target, TrendingUp, ListTodo,
     FolderKanban, UserCog, Settings, FileMinus, ClipboardList, PackageCheck,
-    Tags, Boxes, ArrowLeftRight, ClipboardCheck,
+    Tags, Boxes, ArrowLeftRight, ClipboardCheck, ListTree, Shapes,
 } from '@lucide/vue';
 
 /**
@@ -59,9 +59,11 @@ export const navigation = [
     {
         label: 'Finance',
         items: [
-            { label: 'Comptes bancaires', permission: 'bank_accounts.view_any', icon: Landmark },
-            { label: 'Écritures', permission: 'journal_entries.view_any', icon: BookOpen },
-            { label: 'Cautions', permission: 'cautions.view_any', icon: ShieldCheck },
+            { label: 'Comptes bancaires', route: 'finance.bank-accounts.index', active: 'finance.bank-accounts.*', permission: 'bank_accounts.view_any', icon: Landmark },
+            { label: 'Plan comptable', route: 'finance.accounts.index', active: 'finance.accounts.*', permission: 'chart_of_accounts.view_any', icon: ListTree },
+            { label: 'Écritures', route: 'finance.journal-entries.index', active: 'finance.journal-entries.*', permission: 'journal_entries.view_any', icon: BookOpen },
+            { label: 'Cautions', route: 'finance.cautions.index', active: 'finance.cautions.*', permission: 'cautions.view_any', icon: ShieldCheck },
+            { label: 'Types de caution', route: 'finance.caution-types.index', active: 'finance.caution-types.*', permission: 'caution_types.view_any', icon: Shapes },
         ],
     },
     {

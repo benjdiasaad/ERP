@@ -80,11 +80,7 @@ class JournalEntryController extends Controller
     {
         $this->authorize('post', $journalEntry);
 
-        try {
-            $journalEntry = $this->journalEntryService->post($journalEntry);
-        } catch (ValidationException $e) {
-            abort(422, $e->getMessage());
-        }
+        $journalEntry = $this->journalEntryService->post($journalEntry);
 
         return new JournalEntryResource($journalEntry);
     }
@@ -97,11 +93,7 @@ class JournalEntryController extends Controller
             'reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        try {
-            $journalEntry = $this->journalEntryService->cancel($journalEntry, $request->reason);
-        } catch (ValidationException $e) {
-            abort(422, $e->getMessage());
-        }
+        $journalEntry = $this->journalEntryService->cancel($journalEntry, $request->reason);
 
         return new JournalEntryResource($journalEntry);
     }

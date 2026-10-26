@@ -8,6 +8,7 @@ use App\Models\Caution\CautionType;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CautionTypeService
 {
@@ -60,6 +61,13 @@ class CautionTypeService
      */
     public function delete(CautionType $cautionType): void
     {
+        // Deleting the type would cascade to its cautions: deactivate it instead.
+        if ($cautionType->cautions()->withTrashed()->exists()) {
+            throw ValidationException::withMessages([
+                'caution_type' => 'Cannot delete a caution type that has cautions. Deactivate it instead.',
+            ]);
+        }
+
         $cautionType->delete();
     }
 

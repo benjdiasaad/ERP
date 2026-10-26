@@ -653,6 +653,8 @@ class CautionCrudTest extends TestCase
         $responseA = $this->withHeaders($this->authHeaders($userA))
             ->getJson('/api/cautions');
 
+        // Each request authenticates its own token.
+        $this->app['auth']->forgetGuards();
         $responseB = $this->withHeaders($this->authHeaders($userB))
             ->getJson('/api/cautions');
 

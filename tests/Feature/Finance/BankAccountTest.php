@@ -44,7 +44,7 @@ class BankAccountTest extends TestCase
             'account_number' => '1234567890',
             'iban'           => 'FR1420041010050500013M02606',
             'swift'          => 'BNPAFRPP',
-            'currency_id'    => $currencyId ?? Currency::factory()->create()->id,
+            'currency_id'    => $currencyId ?? Currency::factory()->create(['company_id' => null])->id,
             'balance'        => 5000.00,
             'is_active'      => true,
         ];
@@ -122,8 +122,8 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.view_any']);
 
-        $currencyUSD = Currency::factory()->create(['code' => 'USD']);
-        $currencyEUR = Currency::factory()->create(['code' => 'EUR']);
+        $currencyUSD = Currency::factory()->create(['code' => 'USD', 'company_id' => null]);
+        $currencyEUR = Currency::factory()->create(['code' => 'EUR', 'company_id' => null]);
 
         BankAccount::factory()->create(['company_id' => $company->id, 'currency_id' => $currencyUSD->id]);
         BankAccount::factory()->create(['company_id' => $company->id, 'currency_id' => $currencyEUR->id]);
@@ -159,7 +159,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.create']);
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
 
         $response = $this->withHeaders($this->authHeaders($user))
@@ -179,7 +179,7 @@ class BankAccountTest extends TestCase
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
 
         $response = $this->withHeaders($this->authHeaders($user))
@@ -193,7 +193,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.create']);
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
         unset($payload['name']);
 
@@ -209,7 +209,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.create']);
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
         unset($payload['bank']);
 
@@ -225,7 +225,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.create']);
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
         unset($payload['account_number']);
 
@@ -256,7 +256,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.create']);
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
         unset($payload['balance']);
 
@@ -431,6 +431,8 @@ class BankAccountTest extends TestCase
         $responseA = $this->withHeaders($this->authHeaders($userA))
             ->getJson('/api/bank-accounts');
 
+        // Each request authenticates its own token.
+        $this->app['auth']->forgetGuards();
         $responseB = $this->withHeaders($this->authHeaders($userB))
             ->getJson('/api/bank-accounts');
 
@@ -497,7 +499,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.create']);
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
         $payload['balance'] = 1234.56;
 
@@ -513,7 +515,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.view']);
 
-        $currency = Currency::factory()->create(['code' => 'USD']);
+        $currency = Currency::factory()->create(['code' => 'USD', 'company_id' => null]);
         $account = BankAccount::factory()->create(['company_id' => $company->id, 'currency_id' => $currency->id]);
 
         $response = $this->withHeaders($this->authHeaders($user))
@@ -544,7 +546,7 @@ class BankAccountTest extends TestCase
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['bank_accounts.create']);
 
-        $currency = Currency::factory()->create();
+        $currency = Currency::factory()->create(['company_id' => null]);
         $payload = $this->bankAccountPayload($currency->id);
         unset($payload['iban'], $payload['swift']);
 

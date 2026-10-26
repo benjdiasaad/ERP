@@ -20,6 +20,7 @@ class CautionHistoryResource extends JsonResource
             'new_status'        => $this->new_status,
             'notes'             => $this->notes,
             'created_by'        => $this->created_by,
+            'author'            => $this->whenLoaded('author', fn () => $this->author ? trim($this->author->first_name . ' ' . $this->author->last_name) : null),
             'created_at'        => $this->created_at?->toISOString(),
             'updated_at'        => $this->updated_at?->toISOString(),
         ];

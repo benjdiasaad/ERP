@@ -1,6 +1,7 @@
 const currencyFormatter = new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD', maximumFractionDigits: 0 });
 const preciseCurrencyFormatter = new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD', minimumFractionDigits: 2 });
 const numberFormatter = new Intl.NumberFormat('fr-FR');
+const amountFormatter = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 const dateTimeFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -8,6 +9,8 @@ export const formatCurrency = (value) => currencyFormatter.format(Number(value ?
 /** With centimes, for documents (quotes, invoices). */
 export const formatMoney = (value) => preciseCurrencyFormatter.format(Number(value ?? 0));
 export const formatNumber = (value) => numberFormatter.format(Number(value ?? 0));
+/** Two decimals followed by any currency code (bank accounts, cautions in EUR…). */
+export const formatAmount = (value, currency = 'MAD') => `${amountFormatter.format(Number(value ?? 0))} ${currency ?? ''}`.trim();
 export const formatPercent = (value) => `${numberFormatter.format(Number(value ?? 0))} %`;
 export const formatDate = (value) => (value ? dateFormatter.format(new Date(value)) : '—');
 export const formatDateTime = (value) => (value ? dateTimeFormatter.format(new Date(value)) : '—');
@@ -70,6 +73,18 @@ export const labels = {
     movementSource: {
         ReceptionNote: 'Réception', DeliveryNote: 'Livraison', StockInventory: 'Inventaire', transfer: 'Transfert',
     },
+    accountType: { asset: 'Actif', liability: 'Passif', equity: 'Capitaux propres', revenue: 'Produits', expense: 'Charges' },
+    journalStatus: { draft: 'Brouillon', posted: 'Comptabilisée', cancelled: 'Annulée' },
+    cautionDirection: { given: 'Donnée', received: 'Reçue' },
+    cautionPartner: { customer: 'Client', supplier: 'Fournisseur', other: 'Autre' },
+    cautionStatus: {
+        draft: 'Brouillon', active: 'Active', partially_returned: 'Restitution partielle', returned: 'Restituée',
+        expired: 'Expirée', forfeited: 'Saisie', cancelled: 'Annulée',
+    },
+    cautionAction: {
+        created: 'Création', updated: 'Modification', activated: 'Activation', partial_return: 'Restitution partielle',
+        full_return: 'Restitution totale', extended: 'Prolongation', forfeited: 'Saisie', cancelled: 'Annulation', expired: 'Expiration',
+    },
     paymentMethod: { bank_transfer: 'Virement', check: 'Chèque', cash: 'Espèces', credit_card: 'Carte bancaire', mobile: 'Paiement mobile' },
     eventType: {
         meeting: 'Réunion', conference: 'Conférence', training: 'Formation',
@@ -93,6 +108,11 @@ export const variants = {
     creditNoteStatus: { draft: 'outline', confirmed: 'secondary', applied: 'default' },
     movementType: { in: 'default', return: 'default', out: 'destructive', transfer: 'secondary', adjustment: 'outline', initial: 'outline' },
     inventoryStatus: { draft: 'outline', in_progress: 'secondary', validated: 'default', completed: 'default', cancelled: 'destructive' },
+    journalStatus: { draft: 'outline', posted: 'default', cancelled: 'destructive' },
+    cautionStatus: {
+        draft: 'outline', active: 'default', partially_returned: 'secondary', returned: 'secondary',
+        expired: 'destructive', forfeited: 'destructive', cancelled: 'outline',
+    },
 };
 
 export const variant = (group, value) => variants[group]?.[value] ?? 'secondary';

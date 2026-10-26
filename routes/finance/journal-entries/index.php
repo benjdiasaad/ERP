@@ -15,8 +15,8 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
     
     Route::middleware('permission:journal_entries.delete')->delete('journal-entries/{journalEntry}', [JournalEntryController::class, 'destroy'])->name('journal-entries.destroy');
 
-    Route::middleware('permission:journal_entries.update')->post('journal-entries/{journalEntry}/post', [JournalEntryController::class, 'post'])->name('journal-entries.post');
+    Route::middleware('permission:journal_entries.post')->post('journal-entries/{journalEntry}/post', [JournalEntryController::class, 'post'])->name('journal-entries.post');
     
-    Route::middleware('permission:journal_entries.update')->post('journal-entries/{journalEntry}/cancel', [JournalEntryController::class, 'cancel'])->name('journal-entries.cancel');
+    Route::middleware('permission:journal_entries.cancel')->post('journal-entries/{journalEntry}/cancel', [JournalEntryController::class, 'cancel'])->name('journal-entries.cancel');
 
 });

@@ -135,7 +135,7 @@ class CautionController extends Controller
     {
         $this->authorize('viewAny', Caution::class);
 
-        $days = $request->query('days', 30);
+        $days = $request->integer('days', 30);
         $cautions = $this->cautionService->getExpiring($days);
 
         return CautionResource::collection($cautions);

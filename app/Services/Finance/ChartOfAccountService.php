@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Finance;
 
 use App\Models\Finance\ChartOfAccount;
+use App\Models\Finance\JournalEntryLine;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +72,14 @@ class ChartOfAccountService
      */
     public function delete(ChartOfAccount $account): bool
     {
+        if ($account->children()->exists()) {
+            throw ValidationException::withMessages(['account' => 'Cannot delete an account that has sub-accounts.']);
+        }
+
+        if (JournalEntryLine::where('chart_of_account_id', $account->id)->exists()) {
+            throw ValidationException::withMessages(['account' => 'Cannot delete an account used in journal entries.']);
+        }
+
         return (bool) $account->delete();
     }
 

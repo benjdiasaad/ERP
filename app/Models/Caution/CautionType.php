@@ -23,6 +23,7 @@ class CautionType extends Model
         'name',
         'description',
         'default_percentage',
+        'is_active',
     ];
 
     protected $casts = [

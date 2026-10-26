@@ -47,9 +47,10 @@ class BankAccount extends Model
     /**
      * Get the currency for this bank account.
      */
+    /** The currency may be the company's own or a shared one (company_id null). */
     public function currency(): BelongsTo
     {
-        return $this->belongsTo(Currency::class);
+        return $this->belongsTo(Currency::class)->withoutGlobalScope('company');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────

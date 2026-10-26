@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Caution;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCautionRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -16,7 +19,7 @@ class UpdateCautionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'caution_type_id'   => ['sometimes', 'exists:caution_types,id'],
+            'caution_type_id'   => ['sometimes', 'integer', $this->inCompany('caution_types', 'id', false)],
             'amount'            => ['sometimes', 'numeric', 'min:0'],
             'issue_date'        => ['sometimes', 'date'],
             'expiry_date'       => ['sometimes', 'date'],

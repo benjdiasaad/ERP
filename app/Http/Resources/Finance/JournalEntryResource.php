@@ -17,14 +17,18 @@ class JournalEntryResource extends JsonResource
             'date'          => $this->date?->toDateString(),
             'description'   => $this->description,
             'status'        => $this->status,
-            'total_debit'   => $this->total_debit,
-            'total_credit'  => $this->total_credit,
+            'total_debit'   => (float) $this->total_debit,
+            'total_credit'  => (float) $this->total_credit,
             'lines'         => JournalEntryLineResource::collection($this->whenLoaded('lines')),
             'posted_at'     => $this->posted_at?->toISOString(),
-            'posted_by'     => $this->whenLoaded('postedBy', fn () => [
+            'posted_by'     => $this->posted_by,
+            'posted_by_user' => $this->whenLoaded('postedBy', fn () => $this->postedBy ? [
                 'id'   => $this->postedBy->id,
-                'name' => $this->postedBy->first_name . ' ' . $this->postedBy->last_name,
-            ]),
+                'name' => trim($this->postedBy->first_name . ' ' . $this->postedBy->last_name),
+            ] : null),
+            'cancelled_at'  => $this->cancelled_at?->toISOString(),
+            'cancelled_by'  => $this->cancelled_by,
+            'cancellation_reason' => $this->cancellation_reason,
             'created_at'    => $this->created_at?->toISOString(),
             'updated_at'    => $this->updated_at?->toISOString(),
         ];

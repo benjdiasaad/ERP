@@ -196,7 +196,7 @@ class JournalEntryTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_store_requires_reference(): void
+    public function test_store_generates_reference_when_missing(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
         $this->giveUserPermissions($user, $company, ['journal_entries.create']);
@@ -207,8 +207,8 @@ class JournalEntryTest extends TestCase
         $response = $this->withHeaders($this->authHeaders($user))
             ->postJson('/api/journal-entries', $payload);
 
-        $response->assertUnprocessable();
-        $response->assertJsonValidationErrors('reference');
+        $response->assertCreated();
+        $this->assertMatchesRegularExpression('/^EC-\d{4}-00001$/', $response->json('data.reference'));
     }
 
     public function test_store_requires_date(): void
@@ -404,7 +404,7 @@ class JournalEntryTest extends TestCase
     public function test_post_transitions_draft_to_posted(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.post']);
 
         $account1 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
         $account2 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
@@ -436,7 +436,7 @@ class JournalEntryTest extends TestCase
     public function test_post_validates_debit_equals_credit(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.post']);
 
         $account1 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
         $account2 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
@@ -463,7 +463,7 @@ class JournalEntryTest extends TestCase
     public function test_post_requires_at_least_one_line(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.post']);
 
         $response = $this->withHeaders($this->authHeaders($user))
             ->postJson('/api/journal-entries', $this->journalEntryPayload([]));
@@ -480,7 +480,7 @@ class JournalEntryTest extends TestCase
     public function test_post_cannot_post_already_posted_entry(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.post']);
 
         $account1 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
         $account2 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
@@ -511,7 +511,7 @@ class JournalEntryTest extends TestCase
     public function test_post_with_multiple_lines_validates_total_debit_credit(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.post']);
 
         $account1 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
         $account2 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
@@ -539,7 +539,7 @@ class JournalEntryTest extends TestCase
     public function test_post_with_decimal_amounts_validates_correctly(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.post']);
 
         $account1 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
         $account2 = ChartOfAccount::factory()->create(['company_id' => $company->id]);
@@ -567,7 +567,7 @@ class JournalEntryTest extends TestCase
     public function test_user_can_cancel_draft_entry(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.cancel']);
 
         $entry = JournalEntry::factory()->create(['company_id' => $company->id, 'status' => 'draft']);
 
@@ -585,7 +585,7 @@ class JournalEntryTest extends TestCase
     public function test_cancel_cannot_cancel_posted_entry(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['journal_entries.create']);
+        $this->giveUserPermissions($user, $company, ['journal_entries.create', 'journal_entries.cancel']);
 
         $entry = JournalEntry::factory()->create(['company_id' => $company->id, 'status' => 'posted']);
 
@@ -642,6 +642,8 @@ class JournalEntryTest extends TestCase
         $responseA = $this->withHeaders($this->authHeaders($userA))
             ->getJson('/api/journal-entries');
 
+        // Each request authenticates its own token.
+        $this->app['auth']->forgetGuards();
         $responseB = $this->withHeaders($this->authHeaders($userB))
             ->getJson('/api/journal-entries');
 

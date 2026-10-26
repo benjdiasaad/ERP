@@ -16,6 +16,8 @@ class CautionTypeResource extends JsonResource
             'name'                 => $this->name,
             'description'          => $this->description,
             'default_percentage'   => $this->default_percentage,
+            'is_active'            => (bool) ($this->is_active ?? true),
+            'cautions_count'       => $this->whenCounted('cautions'),
             'created_at'           => $this->created_at?->toISOString(),
             'updated_at'           => $this->updated_at?->toISOString(),
         ];

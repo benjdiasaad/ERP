@@ -34,6 +34,11 @@ class JournalEntry extends Model
         'total_credit',
         'posted_at',
         'posted_by',
+        'cancelled_at',
+        'cancelled_by',
+        'cancellation_reason',
+        'created_by',
+        'updated_by',
     ];
 
     protected function casts(): array
@@ -43,6 +48,7 @@ class JournalEntry extends Model
             'total_debit'   => 'decimal:2',
             'total_credit'  => 'decimal:2',
             'posted_at'     => 'datetime',
+            'cancelled_at'  => 'datetime',
         ];
     }
 
@@ -62,6 +68,11 @@ class JournalEntry extends Model
     public function postedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
