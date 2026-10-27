@@ -2,7 +2,7 @@ import {
     LayoutDashboard, Users, Building2, ShoppingCart, FileText, Truck, Package, Warehouse,
     Landmark, BookOpen, ShieldCheck, CalendarDays, Contact, Target, TrendingUp, ListTodo,
     FolderKanban, UserCog, Settings, FileMinus, ClipboardList, PackageCheck,
-    Tags, Boxes, ArrowLeftRight, ClipboardCheck, ListTree, Shapes,
+    Tags, Boxes, ArrowLeftRight, ClipboardCheck, ListTree, Shapes, Network, Plane, Tag,
 } from '@lucide/vue';
 
 /**
@@ -69,8 +69,11 @@ export const navigation = [
     {
         label: 'Organisation',
         items: [
-            { label: 'Personnel', permission: 'personnels.view_any', icon: UserCog },
-            { label: 'Événements', permission: 'events.view_any', icon: CalendarDays },
+            { label: 'Personnel', route: 'organisation.personnels.index', active: 'organisation.personnels.*', permission: 'personnels.view_any', icon: UserCog },
+            { label: 'Départements', route: 'organisation.departments.index', active: 'organisation.departments.*', permission: 'departments.view_any', icon: Network },
+            { label: 'Congés', route: 'organisation.leaves.index', active: 'organisation.leaves.*', permission: 'leaves.view_any', icon: Plane },
+            { label: 'Événements', route: 'organisation.events.index', active: 'organisation.events.*', permission: 'events.view_any', icon: CalendarDays },
+            { label: "Catégories d'événements", route: 'organisation.event-categories.index', active: 'organisation.event-categories.*', permission: 'event_categories.view_any', icon: Tag },
             { label: 'Projets', permission: 'projects.view_any', icon: FolderKanban },
             { label: 'Paramètres', permission: 'settings.view_any', icon: Settings },
         ],

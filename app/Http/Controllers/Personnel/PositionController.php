@@ -67,7 +67,7 @@ class PositionController extends Controller
         try {
             $this->positionService->delete($position);
 
-            return response()->noContent();
+            return response()->json(null, 204);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Throwable $e) {

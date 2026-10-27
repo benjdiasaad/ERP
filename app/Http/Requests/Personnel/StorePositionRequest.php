@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Personnel;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StorePositionRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -19,7 +22,7 @@ class StorePositionRequest extends FormRequest
         $companyId = auth()->user()?->current_company_id;
 
         return [
-            'department_id' => ['required', 'integer', 'exists:departments,id'],
+            'department_id' => ['required', 'integer', $this->inCompany('departments')],
             'name'          => ['required', 'string', 'max:255'],
             'code'          => [
                 'required',
@@ -28,8 +31,8 @@ class StorePositionRequest extends FormRequest
                 Rule::unique('positions', 'code')->where('company_id', $companyId),
             ],
             'description'   => ['nullable', 'string'],
-            'min_salary'    => ['nullable', 'numeric', 'min:0'],
-            'max_salary'    => ['nullable', 'numeric', 'min:0', 'gte:min_salary'],
+            'salary_min'    => ['nullable', 'numeric', 'min:0'],
+            'salary_max'    => ['nullable', 'numeric', 'min:0', 'gte:salary_min'],
             'is_active'     => ['boolean'],
         ];
     }

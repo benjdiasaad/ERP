@@ -18,6 +18,10 @@ class LeaveService
     {
         return DB::transaction(function () use ($data): Leave {
             $data['status'] = 'pending';
+            // The API calls it `type`; the column is `leave_type`.
+            $data['leave_type'] = $data['leave_type'] ?? $data['type'] ?? null;
+            unset($data['type']);
+            $data['total_days'] = $data['total_days'] ?? $this->countDays($data['start_date'], $data['end_date']);
 
             return Leave::create($data);
         });
@@ -28,6 +32,14 @@ class LeaveService
      */
     public function update(Leave $leave, array $data): Leave
     {
+        if (array_key_exists('type', $data)) {
+            $data['leave_type'] = $data['type'];
+            unset($data['type']);
+        }
+        if ((isset($data['start_date']) || isset($data['end_date'])) && !isset($data['total_days'])) {
+            $data['total_days'] = $this->countDays($data['start_date'] ?? $leave->start_date, $data['end_date'] ?? $leave->end_date);
+        }
+
         $leave->update($data);
 
         return $leave->fresh(['personnel', 'approvedBy']);
@@ -38,6 +50,8 @@ class LeaveService
      */
     public function approve(Leave $leave, int $approverId): Leave
     {
+        $this->ensurePending($leave);
+
         $leave->update([
             'status'      => 'approved',
             'approved_by' => $approverId,
@@ -52,6 +66,13 @@ class LeaveService
      */
     public function reject(Leave $leave, int $approverId, string $reason): Leave
     {
+        // An approved leave can still be revoked.
+        if (!in_array($leave->status, ['pending', 'approved'], true)) {
+            throw ValidationException::withMessages([
+                'status' => "Only pending or approved leave requests can be rejected. Current status: {$leave->status}.",
+            ]);
+        }
+
         $leave->update([
             'status'           => 'rejected',
             'approved_by'      => $approverId,
@@ -124,5 +145,22 @@ class LeaveService
             'compensatory' => 0.0,  // accrued dynamically
             default        => 0.0,
         };
+    }
+
+    /**
+     * Calendar days covered by the leave, both ends included.
+     */
+    private function countDays(mixed $start, mixed $end): float
+    {
+        return (float) (\Illuminate\Support\Carbon::parse($start)->diffInDays(\Illuminate\Support\Carbon::parse($end)) + 1);
+    }
+
+    private function ensurePending(Leave $leave): void
+    {
+        if ($leave->status !== 'pending') {
+            throw ValidationException::withMessages([
+                'status' => "Only pending leave requests can be approved. Current status: {$leave->status}.",
+            ]);
+        }
     }
 }

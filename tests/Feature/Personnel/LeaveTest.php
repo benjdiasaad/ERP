@@ -297,7 +297,7 @@ class LeaveTest extends TestCase
     public function test_user_with_permission_can_approve_leave(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['leaves.update']);
+        $this->giveUserPermissions($user, $company, ['leaves.approve']);
 
         $personnel = Personnel::factory()->create(['company_id' => $company->id]);
         $leave = Leave::factory()->create(['company_id' => $company->id, 'personnel_id' => $personnel->id, 'status' => 'pending']);
@@ -333,7 +333,7 @@ class LeaveTest extends TestCase
     public function test_user_with_permission_can_reject_leave_with_reason(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['leaves.update']);
+        $this->giveUserPermissions($user, $company, ['leaves.reject']);
 
         $personnel = Personnel::factory()->create(['company_id' => $company->id]);
         $leave = Leave::factory()->create(['company_id' => $company->id, 'personnel_id' => $personnel->id, 'status' => 'pending']);
@@ -354,7 +354,7 @@ class LeaveTest extends TestCase
     public function test_reject_sets_rejection_reason_from_request(): void
     {
         ['user' => $user, 'company' => $company] = $this->setUpCompanyAndUser();
-        $this->giveUserPermissions($user, $company, ['leaves.update']);
+        $this->giveUserPermissions($user, $company, ['leaves.reject']);
 
         $personnel = Personnel::factory()->create(['company_id' => $company->id]);
         $leave = Leave::factory()->create(['company_id' => $company->id, 'personnel_id' => $personnel->id]);

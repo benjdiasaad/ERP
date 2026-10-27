@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Personnel;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreContractRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -17,13 +20,13 @@ class StoreContractRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'personnel_id'           => ['required', 'integer', 'exists:personnels,id'],
+            'personnel_id'           => ['required', 'integer', $this->inCompany('personnels')],
             'reference'              => ['nullable', 'string', 'max:100', 'unique:contracts,reference'],
             'type'                   => ['required', Rule::in(['CDI', 'CDD', 'stage', 'freelance', 'interim'])],
             'start_date'             => ['required', 'date'],
             'end_date'               => ['nullable', 'date', 'after_or_equal:start_date'],
             'salary'                 => ['required', 'numeric', 'min:0'],
-            'trial_period_end'       => ['nullable', 'date', 'after_or_equal:start_date'],
+            'trial_period_end_date'  => ['nullable', 'date', 'after_or_equal:start_date'],
             'working_hours_per_week' => ['nullable', 'numeric', 'min:0', 'max:168'],
             'benefits'               => ['nullable', 'array'],
             'document_path'          => ['nullable', 'string', 'max:255'],

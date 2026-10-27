@@ -16,6 +16,7 @@ class EventCategoryResource extends JsonResource
             'name'        => $this->name,
             'color'       => $this->color,
             'description' => $this->description,
+            'events_count' => $this->whenCounted('events'),
             'created_at'  => $this->created_at?->toISOString(),
             'updated_at'  => $this->updated_at?->toISOString(),
         ];

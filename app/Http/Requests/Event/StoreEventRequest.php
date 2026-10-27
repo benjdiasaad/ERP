@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Event;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreEventRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -16,7 +19,7 @@ class StoreEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'event_category_id' => ['required', 'exists:event_categories,id'],
+            'event_category_id' => ['required', $this->inCompany('event_categories', 'id', false)],
             'title'             => ['required', 'string', 'max:255'],
             'type'              => ['required', 'in:meeting,conference,training,workshop,social,holiday'],
             'location'          => ['nullable', 'string', 'max:255'],

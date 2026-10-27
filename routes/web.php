@@ -9,6 +9,8 @@ use App\Http\Controllers\Web\CRM\ContactController;
 use App\Http\Controllers\Web\CRM\LeadController;
 use App\Http\Controllers\Web\CRM\OpportunityController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\Event\EventCategoryController as WebEventCategoryController;
+use App\Http\Controllers\Web\Event\EventController as WebEventController;
 use App\Http\Controllers\Web\Finance\BankAccountController;
 use App\Http\Controllers\Web\Finance\ChartOfAccountController;
 use App\Http\Controllers\Web\Finance\JournalEntryController;
@@ -18,6 +20,10 @@ use App\Http\Controllers\Web\Inventory\StockInventoryController;
 use App\Http\Controllers\Web\Inventory\StockLevelController;
 use App\Http\Controllers\Web\Inventory\StockMovementController;
 use App\Http\Controllers\Web\Inventory\WarehouseController;
+use App\Http\Controllers\Web\Personnel\ContractController as WebContractController;
+use App\Http\Controllers\Web\Personnel\DepartmentController as WebDepartmentController;
+use App\Http\Controllers\Web\Personnel\LeaveController as WebLeaveController;
+use App\Http\Controllers\Web\Personnel\PersonnelController as WebPersonnelController;
 use App\Http\Controllers\Web\Purchasing\PurchaseInvoiceController;
 use App\Http\Controllers\Web\Purchasing\PurchaseOrderController;
 use App\Http\Controllers\Web\Purchasing\PurchaseRequestController;
@@ -164,6 +170,56 @@ Route::middleware('auth')->group(function () {
                     ->middleware("permission:credit_notes.{$action}")
                     ->name("credit-notes.{$action}");
             }
+        });
+
+        Route::prefix('organisation')->name('organisation.')->group(function () {
+            Route::resource('personnels', WebPersonnelController::class)
+                ->middlewareFor('index', 'permission:personnels.view_any')
+                ->middlewareFor('show', 'permission:personnels.view')
+                ->middlewareFor(['create', 'store'], 'permission:personnels.create')
+                ->middlewareFor(['edit', 'update'], 'permission:personnels.update')
+                ->middlewareFor('destroy', 'permission:personnels.delete');
+
+            Route::get('departments', [WebDepartmentController::class, 'index'])->middleware('permission:departments.view_any')->name('departments.index');
+            Route::post('departments', [WebDepartmentController::class, 'store'])->middleware('permission:departments.create')->name('departments.store');
+            Route::put('departments/{department}', [WebDepartmentController::class, 'update'])->middleware('permission:departments.update')->name('departments.update');
+            Route::delete('departments/{department}', [WebDepartmentController::class, 'destroy'])->middleware('permission:departments.delete')->name('departments.destroy');
+            Route::post('positions', [WebDepartmentController::class, 'storePosition'])->middleware('permission:positions.create')->name('positions.store');
+            Route::put('positions/{position}', [WebDepartmentController::class, 'updatePosition'])->middleware('permission:positions.update')->name('positions.update');
+            Route::delete('positions/{position}', [WebDepartmentController::class, 'destroyPosition'])->middleware('permission:positions.delete')->name('positions.destroy');
+
+            Route::post('contracts', [WebContractController::class, 'store'])->middleware('permission:contracts.create')->name('contracts.store');
+            Route::post('contracts/{contract}/terminate', [WebContractController::class, 'terminate'])->middleware('permission:contracts.update')->name('contracts.terminate');
+
+            Route::get('leaves', [WebLeaveController::class, 'index'])->middleware('permission:leaves.view_any')->name('leaves.index');
+            Route::post('leaves', [WebLeaveController::class, 'store'])->middleware('permission:leaves.create')->name('leaves.store');
+            Route::delete('leaves/{leave}', [WebLeaveController::class, 'destroy'])->middleware('permission:leaves.delete')->name('leaves.destroy');
+            Route::post('leaves/{leave}/approve', [WebLeaveController::class, 'approve'])->middleware('permission:leaves.approve')->name('leaves.approve');
+            Route::post('leaves/{leave}/reject', [WebLeaveController::class, 'reject'])->middleware('permission:leaves.reject')->name('leaves.reject');
+            Route::post('leaves/{leave}/cancel', [WebLeaveController::class, 'cancel'])->middleware('permission:leaves.update')->name('leaves.cancel');
+
+            Route::resource('events', WebEventController::class)
+                ->middlewareFor('index', 'permission:events.view_any')
+                ->middlewareFor('show', 'permission:events.view')
+                ->middlewareFor(['create', 'store'], 'permission:events.create')
+                ->middlewareFor(['edit', 'update'], 'permission:events.update')
+                ->middlewareFor('destroy', 'permission:events.delete');
+            foreach (['confirm', 'complete', 'cancel', 'postpone'] as $action) {
+                Route::post("events/{event}/{$action}", [WebEventController::class, $action])
+                    ->middleware("permission:events.{$action}")
+                    ->name("events.{$action}");
+            }
+            Route::post('events/{event}/participants', [WebEventController::class, 'invite'])->middleware('permission:event_participants.invite')->name('events.participants.store');
+            Route::post('events/{event}/participants/{participant}/rsvp', [WebEventController::class, 'rsvp'])->middleware('permission:event_participants.update')->name('events.participants.rsvp');
+            Route::delete('events/{event}/participants/{participant}', [WebEventController::class, 'removeParticipant'])->middleware('permission:event_participants.delete')->name('events.participants.destroy');
+
+            Route::resource('event-categories', WebEventCategoryController::class)
+                ->only(['index', 'store', 'update', 'destroy'])
+                ->parameters(['event-categories' => 'category'])
+                ->middlewareFor('index', 'permission:event_categories.view_any')
+                ->middlewareFor('store', 'permission:event_categories.create')
+                ->middlewareFor('update', 'permission:event_categories.update')
+                ->middlewareFor('destroy', 'permission:event_categories.delete');
         });
 
         Route::prefix('finance')->name('finance.')->group(function () {

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Personnel;
 
+use App\Http\Requests\Concerns\ScopesToCompany;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdatePersonnelRequest extends FormRequest
 {
+    use ScopesToCompany;
+
     public function authorize(): bool
     {
         return true;
@@ -21,8 +24,8 @@ class UpdatePersonnelRequest extends FormRequest
 
         return [
             'user_id'                   => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
-            'department_id'             => ['sometimes', 'nullable', 'integer', 'exists:departments,id'],
-            'position_id'               => ['sometimes', 'nullable', 'integer', 'exists:positions,id'],
+            'department_id'             => ['sometimes', 'nullable', 'integer', $this->inCompany('departments')],
+            'position_id'               => ['sometimes', 'nullable', 'integer', $this->inCompany('positions')],
             'matricule'                 => [
                 'sometimes',
                 'string',
